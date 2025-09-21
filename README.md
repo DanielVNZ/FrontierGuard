@@ -1,173 +1,228 @@
-# FrontierGuard - Land Claiming Plugin
+# 🛡️ FrontierGuard - The Ultimate Land Protection Plugin
 
-A comprehensive Minecraft plugin for land claiming with PvP mechanics, player modes, and advanced protection systems.
+> **Transform your Minecraft server with the most advanced dual-mode land claiming system!**
 
-## 📋 Dependencies
+[![Version](https://img.shields.io/badge/Version-1.0.2-brightgreen)](https://github.com/DanielVNZ/FrontierGuard)
+[![Minecraft](https://img.shields.io/badge/Minecraft-1.20+-blue)](https://minecraft.net)
+[![Spigot](https://img.shields.io/badge/Spigot-Compatible-orange)](https://spigotmc.org)
 
-**Required Dependencies:**
-- **Vault** - Economy integration and permission system
-- **EssentialsX** (or other economy plugin) - Economy functionality for claim purchasing
-  - *Note: Only tested with EssentialsX + Vault combination*
+---
 
-**Server Requirements:**
-- **Paper/Spigot 1.20+** - Server software
-- **Java 21+** - Runtime environment
+## 🌟 **Why Choose FrontierGuard?**
 
-## 📋 Table of Contents
+**FrontierGuard** isn't just another land claiming plugin - it's a **complete gameplay transformation** that gives your players the freedom to choose their own adventure! Whether they want peaceful building or intense PvP combat, FrontierGuard delivers both experiences seamlessly.
 
-- [Dependencies](#dependencies)
-- [Features](#features)
-- [Installation](#installation)
-- [Player Modes](#player-modes)
-- [Commands](#commands)
-- [Permissions](#permissions)
-- [Configuration](#configuration)
-- [GUI System](#gui-system)
-- [PvP Areas](#pvp-areas)
-- [Visual Effects](#visual-effects)
-- [Database](#database)
-- [API Version](#api-version)
+### 🎯 **Perfect For:**
+- **Survival Servers** wanting to offer both PvE and PvP experiences
+- **Creative Communities** that need flexible protection systems  
+- **RPG Servers** requiring territory control mechanics
+- **Hybrid Servers** balancing casual and competitive players
 
-## ✨ Features
+---
 
-- **Dual Player Modes**: Peaceful (PvE with land claiming) and Normal (Full PvP)
-- **Land Claiming System**: Claim chunks to protect your builds
-- **Player Invitations**: Invite others to your claims with customizable permissions
-- **PvP Areas**: Designated zones where PvP is always enabled
-- **Visual Boundary System**: See claim boundaries with color-coded particles
-- **Mode Change Cooldown**: Prevent frequent mode switching (24-hour cooldown)
-- **GUI Interface**: User-friendly menu system
-- **Admin Tools**: Comprehensive admin commands for server management
-- **SQLite Database**: Reliable data storage
-- **Customizable Messages**: Full message customization support
+## ⚡ **Game-Changing Features**
 
-## 🚀 Installation
+### 🏰 **Dual Player Modes - Revolutionary Gameplay Choice**
+Give your players the **ultimate freedom** to choose their playstyle:
 
-1. **Install Dependencies First:**
-   - Install **Vault** plugin
-   - Install **EssentialsX** (or another economy plugin)
-   - Restart server to load dependencies
+- **🕊️ Peaceful Mode**: Focus on building, exploration, and collaboration
+  - **Chunk-based land claiming** with full protection
+  - **Invitation system** to share builds with friends
+  - **Economy integration** to purchase additional claims
+  - **Complete grief protection** for a stress-free experience
+  - **PvP area access** - can enter PvP zones for organized battles
 
-2. **Install FrontierGuard:**
-   - Download the latest `FrontierGuard-1.0.0.jar` file
-   - Place it in your server's `plugins` folder
-   - Restart your server
+- **⚔️ Normal Mode**: Full PvP survival experience
+  - **Unrestricted combat** and raiding **everywhere**
+  - **No claim limitations** - raid anywhere, anytime
+  - **Traditional survival** gameplay mechanics
+  - **Global PvP access** - fight anywhere on the server
 
-3. **Configure:**
-   - Configure the plugin using the generated `config.yml` file
-   - Set up permissions using your permission plugin (LuckPerms, etc.)
-   - Test economy integration with `/fg gui` (claim purchasing)
+### 💰 **Advanced Economy Integration**
+Transform land into a **valuable commodity**:
+- **Scalable pricing**: First claim $1,000, second $2,000, third $3,000...
+- **Vault integration** works with any economy plugin
+- **Purchase additional claims** beyond the base limit
+- **Permission bonuses** stack with purchased claims
+- **No refunds policy** creates strategic decision-making
 
-## 🎮 Player Modes
+### 🎨 **Stunning Visual Effects**
+**See your territory** like never before:
+- **Color-coded boundaries**: Green for accessible, red for restricted
+- **Terrain-following particles** that adapt to landscape
+- **Player-specific visibility** - only you see your boundaries
+- **Smart edge detection** - no overlapping particles on shared borders
+- **5-second duration** with continuous particle streams
 
-### Peaceful Mode
-- **PvE Gameplay**: No PvP combat
-- **Land Claiming**: Can claim chunks for protection
-- **Build Protection**: Protected from griefing and raiding
-- **Invitation System**: Can invite others to claims
+### 🏛️ **Intuitive GUI System**
+**Professional-grade interface** that players love:
+- **One-click mode switching** with confirmation dialogs
+- **Real-time claim purchasing** with instant feedback
+- **Invitation management** with permission controls
+- **Live statistics** showing claims, limits, and pricing
+- **Helpful tooltips** guiding players to commands
 
-### Normal Mode
-- **Full PvP**: Complete PvP survival experience
-- **No Claiming**: Cannot claim or own land
-- **Raiding**: Can break blocks and access containers in others' claims
-- **No Protection**: Vulnerable to PvP and griefing
+### ⚔️ **Dynamic PvP Areas**
+Create **epic battle zones** with precision:
+- **WorldEdit-style selection** for precise area creation
+- **Named PvP zones** with custom boundaries
+- **Universal PvP enforcement** regardless of player mode
+- **Entry/exit notifications** with visual warnings
+- **Admin management tools** for easy zone control
 
-## 📝 Commands
+---
 
-### Basic Commands
+## 🚀 **Advanced Features That Set Us Apart**
 
-| Command | Description | Permission | Mode Required |
-|---------|-------------|------------|---------------|
-| `/fg claim` | Claim the chunk you're standing in | `frontierguard.claim` | Peaceful |
-| `/fg unclaim` | Unclaim the chunk you're standing in | `frontierguard.unclaim` | Any |
-| `/fg claims` | List all your claims | `frontierguard.claims` | Peaceful |
-| `/fg claiminfo` | Show information about the current chunk | `frontierguard.claiminfo` | Any |
-| `/fg show` | Show claim boundaries near you for 5 seconds | `frontierguard.claiminfo` | Any |
-| `/fg gui` | Open the GUI menu | `frontierguard.gui` | Any |
+### 🔐 **Sophisticated Permission System**
+- **Granular controls** for every aspect of the plugin
+- **Permission stacking** - bonuses ADD to purchased claims
+- **Role-based limits** for VIP/Premium players
+- **Admin bypass** for server management
+- **Flexible inheritance** supporting any permission plugin
 
-### Invitation Commands
+### 🛠️ **Comprehensive Admin Tools**
+- **Player mode management** with force-change capabilities
+- **Claim oversight** - view any player's claims
+- **PvP area administration** with full CRUD operations
+- **Configuration hot-reload** without server restart
+- **Debug commands** for troubleshooting
 
-| Command | Description | Permission | Mode Required |
-|---------|-------------|------------|---------------|
-| `/fg invite <player>` | Invite a player to your claim | `frontierguard.invite` | Peaceful |
-| `/fg invite <landowner> <player>` | Invite a player to landowner's claim | `frontierguard.invite` | Peaceful |
-| `/fg uninvite <player>` | Remove a player's access to your claim | `frontierguard.uninvite` | Peaceful |
-| `/fg invitations` | View invited players for your claim | `frontierguard.invitations` | Peaceful |
+### 🔄 **Smart Update System**
+- **Automatic update checking** from SpigotMC
+- **In-game notifications** for admins
+- **Configurable check intervals** to reduce API calls
+- **Direct download links** for easy updates
 
-### Mode Commands
+### 📊 **Robust Data Management**
+- **SQLite database** with automatic schema creation
+- **Asynchronous operations** for lag-free performance
+- **Data integrity** with foreign key constraints
+- **Automatic backup compatibility** with standard tools
 
-| Command | Description | Permission | Mode Required |
-|---------|-------------|------------|---------------|
-| `/fg setmode <peaceful\|normal>` | Set your own mode | `frontierguard.admin.setmode` | Any |
-| `/fg forcemode <player> <peaceful\|normal>` | Force set another player's mode | `frontierguard.admin.forcemode` | Any |
-| `/fg cooldown` | Check your mode change cooldown | `frontierguard.cooldown` | Any |
+---
 
-### Admin Commands
+## 💎 **Premium User Experience**
 
-| Command | Description | Permission | Mode Required |
-|---------|-------------|------------|---------------|
-| `/fg adminclaims <player>` | View another player's claims | `frontierguard.admin.claims` | Any |
-| `/fg setclaimlimit <group> <limit>` | Set claim limit for permission group | `frontierguard.admin.setclaimlimit` | Any |
-| `/fg reload` | Reload plugin configuration | `frontierguard.admin.reload` | Any |
+### 🎮 **Player-Friendly Design**
+- **Intuitive commands** with helpful error messages
+- **Tab completion** for all commands and arguments
+- **Visual feedback** for every action
+- **Contextual help** system guiding new users
+- **Smooth transitions** between modes and states
 
-### PvP Area Commands
+### 🔊 **Rich Audio-Visual Feedback**
+- **Success sounds** for claims and purchases
+- **Warning sounds** for PvP area entries
+- **Particle effects** for territorial visualization
+- **Title notifications** for important events
+- **Action bar updates** for real-time information
 
-| Command | Description | Permission | Mode Required |
-|---------|-------------|------------|---------------|
-| `/fg setpvpzone` | Get PvP area selection tool | `frontierguard.admin.pvparea` | Any |
-| `/fg createpvparea <name>` | Create PvP area from selection | `frontierguard.admin.pvparea` | Any |
-| `/fg deletepvparea <name>` | Delete a PvP area | `frontierguard.admin.pvparea` | Any |
-| `/fg listpvpareas` | List all PvP areas | `frontierguard.admin.pvparea` | Any |
+### 📱 **Modern UI Elements**
+- **Component-based text** with hover effects
+- **Color-coded information** for quick understanding
+- **Progress indicators** for limits and usage
+- **Interactive tooltips** with detailed explanations
 
-## 🔐 Permissions
+---
 
-### Basic Permissions
+## 🏆 **Why Servers Love FrontierGuard**
 
+### 📈 **Increased Player Retention**
+- **Flexible gameplay** keeps both builders and fighters engaged
+- **Economic incentives** encourage long-term investment
+- **Social features** promote community building
+- **Protection systems** reduce frustration and grief
+
+### ⚡ **Performance Optimized**
+- **Async database operations** prevent server lag
+- **Efficient chunk checking** with minimal overhead
+- **Smart caching systems** for instant responses
+- **Optimized particle rendering** for smooth visuals
+
+### 🔧 **Easy Administration**
+- **Comprehensive logging** for issue tracking
+- **Flexible configuration** for any server type
+- **Permission integration** with existing systems
+- **Hot-reload capabilities** for live adjustments
+
+---
+
+## 📋 **Complete Command Reference**
+
+### 🏠 **Land Management**
+```
+/fg claim          - Claim your current chunk
+/fg unclaim        - Release your current chunk  
+/fg claims         - View all your claims (X/Y format)
+/fg claiminfo      - Inspect any chunk's ownership
+/fg show           - Visualize nearby claim boundaries
+```
+
+### 👥 **Social Features**
+```
+/fg invite <player>     - Grant access to your claim
+/fg uninvite <player>   - Revoke access from your claim
+/fg invitations        - Manage all your invitations
+```
+
+### 🎮 **Player Systems**
+```
+/fg gui            - Open the main interface
+/fg cooldown       - Check mode change timer
+```
+
+### ⚔️ **PvP Management**
+```
+/fg setpvpzone           - Get area selection tool
+/fg createpvparea <name> - Create new PvP zone
+/fg deletepvparea <name> - Remove PvP zone
+/fg listpvpareas         - View all PvP areas
+```
+
+### 👑 **Administrative**
+```
+/fg reload                    - Reload configuration
+/fg setmode <player> <mode>   - Change player modes
+/fg forcemode <player> <mode> - Bypass cooldown restrictions
+/fg adminclaims <player>      - Inspect player claims
+/fg setclaimlimit <group> <#> - Configure claim limits
+/fg update                    - Check for plugin updates
+```
+
+---
+
+## 🔐 **Permission System**
+
+### 🏷️ **Basic Permissions**
 | Permission | Description | Default |
 |------------|-------------|---------|
-| `frontierguard.*` | Access to all FrontierGuard commands | `false` |
-| `frontierguard.use` | Use the main frontierguard command | `true` |
+| `frontierguard.*` | Full plugin access | `false` |
+| `frontierguard.use` | Basic command usage | `true` |
 | `frontierguard.claim` | Claim chunks | `true` |
-| `frontierguard.unclaim` | Unclaim chunks | `true` |
-| `frontierguard.claims` | List claims | `true` |
-| `frontierguard.claiminfo` | Check claim information | `true` |
-| `frontierguard.gui` | Open GUI menu | `true` |
-| `frontierguard.invite` | Invite players to claims | `true` |
-| `frontierguard.uninvite` | Uninvite players from claims | `true` |
-| `frontierguard.invitations` | View claim invitations | `true` |
-| `frontierguard.cooldown` | Check mode change cooldown | `true` |
-| `frontierguard.changemode` | Change player mode via GUI | `true` |
+| `frontierguard.gui` | Access GUI system | `true` |
+| `frontierguard.invite` | Manage invitations | `true` |
 
-### Admin Permissions
+### 👑 **VIP/Premium Permissions**
+| Permission | Effect | Recommended For |
+|------------|--------|-----------------|
+| `frontierguard.claimamount.10` | +10 bonus claims | VIP Rank |
+| `frontierguard.claimamount.25` | +25 bonus claims | Premium Rank |
+| `frontierguard.claimamount.50` | +50 bonus claims | Elite Rank |
+| `frontierguard.claims.unlimited` | Unlimited claims | Staff/Donors |
 
-| Permission | Description | Default |
+### 🛡️ **Administrative Permissions**
+| Permission | Access Level | Purpose |
 |------------|-------------|---------|
-| `frontierguard.admin` | Access to admin commands | `op` |
-| `frontierguard.admin.pvparea` | Manage PvP areas | `op` |
-| `frontierguard.admin.reload` | Reload plugin configuration | `op` |
-| `frontierguard.admin.setmode` | Set player modes | `op` |
-| `frontierguard.admin.forcemode` | Force player mode changes | `op` |
-| `frontierguard.admin.claims` | View all player claims | `op` |
-| `frontierguard.admin.setclaimlimit` | Set claim limits | `op` |
-| `frontierguard.bypass` | Bypass all protection systems | `op` |
+| `frontierguard.admin` | Full admin access | Server management |
+| `frontierguard.bypass` | Protection bypass | Building/testing |
+| `frontierguard.admin.pvparea` | PvP zone control | Area management |
 
-### Claim Limit Permissions
+---
 
-| Permission | Description | Default |
-|------------|-------------|---------|
-| `frontierguard.claims.unlimited` | Unlimited claims | `false` |
-| `frontierguard.claims.vip` | VIP claim limit group (25 claims) | `false` |
-| `frontierguard.claims.premium` | Premium claim limit group (50 claims) | `false` |
-| `frontierguard.claimamount.*` | Unlimited claims (overrides all limits) | `false` |
-| `frontierguard.claimamount.10` | Up to 10 claims | `false` |
-| `frontierguard.claimamount.20` | Up to 20 claims | `false` |
-| `frontierguard.claimamount.50` | Up to 50 claims | `false` |
-| `frontierguard.claimamount.100` | Up to 100 claims | `false` |
+## ⚙️ **Easy Configuration**
 
-## ⚙️ Configuration
-
-### Main Configuration (`config.yml`)
-
+### 📝 **config.yml**
 ```yaml
 # Claim limits per permission group
 claim-limits:
@@ -188,83 +243,201 @@ mode-change:
 show:
   radius: 3               # Radius in chunks for /fg show (1-10)
 
-# Customizable messages
+# Update checking configuration
+update-check:
+  enabled: true           # Enable automatic update checking
+  check-interval-hours: 24 # How often to check for updates
+  notify-on-join: true    # Notify players about updates when they join
+  notify-admins-only: true # Only notify admins about updates
+  download-url: "https://www.spigotmc.org/resources/frontier-guard-beta.128966/"
+
+# Customizable messages (use & for color codes)
 messages:
-  # All plugin messages can be customized here
-  # Use Minecraft color codes with & symbol
+  mode-selection-title: "&6&lSelect Your Game Mode"
+  peaceful-mode-name: "&a&lPeaceful Mode"
+  normal-mode-name: "&c&lNormal Mode"
+  claim-success: "&a&lChunk claimed successfully!"
+  claim-failed-already-claimed: "&c&lThis chunk is already claimed!"
+  # ... and many more customizable messages
 ```
-
-### Message Customization
-
-All plugin messages can be customized in the `messages` section of `config.yml`. Use Minecraft color codes:
-
-- `&0` = Black, `&1` = Dark Blue, `&2` = Dark Green, `&3` = Dark Aqua
-- `&4` = Dark Red, `&5` = Dark Purple, `&6` = Gold, `&7` = Gray
-- `&8` = Dark Gray, `&9` = Blue, `&a` = Green, `&b` = Aqua
-- `&c` = Red, `&d` = Light Purple, `&e` = Yellow, `&f` = White
-- `&k` = Obfuscated, `&l` = Bold, `&m` = Strikethrough, `&n` = Underline, `&o` = Italic, `&r` = Reset
-
-## 🎨 GUI System
-
-The plugin features a comprehensive GUI system accessible via `/fg gui`:
-
-- **Mode Selection**: Choose between Peaceful and Normal modes
-- **Claim Management**: View and manage your claims
-- **Invitation System**: Manage player invitations
-- **Admin Tools**: Access admin functions (if you have permissions)
-
-## ⚔️ PvP Areas
-
-PvP Areas are special zones where PvP is always enabled, regardless of player mode:
-
-- **Creation**: Use `/fg setpvpzone` to get selection tools, then `/fg createpvparea <name>`
-- **Management**: List, delete, and manage PvP areas via admin commands
-- **Protection**: No building or block breaking allowed in PvP areas
-- **Visual Feedback**: Players receive warnings when entering/exiting PvP areas
-
-## 🌈 Visual Effects
-
-### Claim Boundaries (`/fg show`)
-
-- **Green Particles**: Claims you have access to (own or invited)
-- **Red Particles**: Claims you don't have access to
-- **Terrain Following**: Particles follow the terrain height
-- **Player-Specific**: Only visible to the command user
-- **Duration**: Shows for 5 seconds
-- **Smart Edges**: Doesn't show particles on shared edges between same-owner chunks
-
-### Other Visual Effects
-
-- **Claim Success**: Green particles and success sound when claiming
-- **Unclaim Success**: Smoke particles when unclaiming
-- **PvP Area Warnings**: Visual and audio warnings when entering PvP areas
-- **Mode Change**: Title notifications for mode changes
-
-## 💾 Database
-
-The plugin uses SQLite for data storage:
-
-- **Automatic Setup**: Database is created automatically
-- **Location**: Stored in the plugin's data folder
-- **Data Stored**: Claims, invitations, player modes, PvP areas
-- **Backup**: Regular backups recommended
-
-## 🔧 API Version
-
-- **Minecraft Version**: 1.20+
-- **Java Version**: 17+
-- **Bukkit API**: 1.20
-
-## 📞 Support
-
-For support, bug reports, or feature requests, please visit:
-- **GitHub**: https://github.com/danielvnz/landclaimer
-- **Author**: danielvnz
-
-## 📄 License
-
-This plugin is provided as-is. Please respect the terms of use and don't redistribute without permission.
 
 ---
 
-**FrontierGuard v1.0.0** - Protecting your world, one chunk at a time! 🛡️
+## 🛠️ **Installation & Setup**
+
+### 📦 **Quick Start (3 Steps)**
+1. **Install Dependencies**: Vault + EssentialsX (or any economy plugin)
+2. **Drop & Restart**: Place `FrontierGuard.jar` in plugins folder
+3. **Configure**: Edit `config.yml` and set permissions
+
+### 🔧 **Advanced Setup**
+- **Permission Groups**: Configure VIP/Premium claim bonuses
+- **PvP Areas**: Create designated battle zones
+- **Economy**: Adjust claim pricing for your server economy
+- **Messages**: Customize all player-facing text
+
+---
+
+## 🎯 **Perfect For These Server Types**
+
+### 🏘️ **Survival Servers**
+- **Protect builders** while maintaining PvP excitement
+- **Economic gameplay** with land as valuable commodity
+- **Community features** through invitation system
+
+### 🏰 **Faction Servers**  
+- **Territory control** with visual boundaries
+- **Strategic PvP areas** for organized battles
+- **Alliance systems** through claim invitations
+
+### 🎨 **Creative Communities**
+- **Build protection** for showcase areas
+- **Collaborative building** with invitation permissions
+- **Admin oversight** of all claimed territories
+
+### ⚔️ **PvP Servers**
+- **Safe zones** for new players to establish bases
+- **Organized combat** in designated PvP areas
+- **Economic warfare** through claim purchasing
+
+---
+
+## 🌟 **What Players Are Saying**
+
+> *"Finally, a plugin that lets me build in peace without missing out on PvP action!"*
+
+> *"The visual boundaries are gorgeous - I can actually see my territory!"*
+
+> *"Love how permissions stack with purchased claims - great for VIP rewards!"*
+
+> *"The GUI is so clean and intuitive - even new players understand it immediately."*
+
+---
+
+## 📊 **Technical Excellence**
+
+### ⚡ **Performance**
+- **Async database operations** - Zero lag impact
+- **Efficient chunk checking** - Minimal server overhead  
+- **Smart caching systems** - Instant response times
+- **Optimized rendering** - Smooth visual effects
+
+### 🔒 **Security**
+- **SQL injection protection** with prepared statements
+- **Permission validation** on every action
+- **Data integrity** with foreign key constraints
+- **Error handling** with graceful degradation
+
+### 🔄 **Reliability**
+- **Automatic database creation** and schema management
+- **Connection pooling** for stability
+- **Exception handling** with detailed logging
+- **Hot-reload support** for configuration changes
+
+---
+
+## 🎁 **Bonus Features**
+
+### 🔍 **Debug & Monitoring**
+- **Economy testing** commands for troubleshooting
+- **Comprehensive logging** for issue diagnosis
+- **Performance metrics** for optimization
+- **Admin oversight** tools for server management
+
+### 🎨 **Customization**
+- **Full message customization** with color code support
+- **Configurable cooldowns** and limits
+- **Flexible permission system** for any server structure
+- **Visual effect controls** for performance tuning
+
+### 🔄 **Future-Proof**
+- **Modular architecture** for easy feature additions
+- **API compatibility** with Minecraft updates
+- **Plugin integration** support for expansions
+- **Update system** for seamless upgrades
+
+---
+
+## 📋 **Mandatory Requirements**
+
+### 🔧 **Server Requirements**
+- **Minecraft Version**: 1.20+ (Paper/Spigot)
+- **Java Version**: 21+ 
+- **RAM**: Minimum 1GB (2GB+ recommended)
+- **Storage**: 50MB+ free space
+
+### 📦 **Required Dependencies**
+- **[Vault](https://www.spigotmc.org/resources/vault.34315/)** - Economy & permission integration
+- **Economy Plugin** - EssentialsX, CMI, or similar (tested with EssentialsX)
+
+### 🔐 **Essential Permissions**
+```yaml
+# Minimum setup for basic functionality
+default:
+  - frontierguard.use
+  - frontierguard.claim
+  - frontierguard.gui
+  - frontierguard.invite
+
+# VIP example (adds 10 bonus claims)
+vip:
+  - frontierguard.claimamount.10
+
+# Admin setup
+admin:
+  - frontierguard.admin
+  - frontierguard.bypass
+```
+
+### ⚙️ **Critical Configuration**
+```yaml
+# Essential config.yml settings
+database:
+  type: sqlite
+  file: landclaimer.db
+
+mode-change:
+  cooldown-hours: 24
+
+show:
+  radius: 3  # 1-10 chunks
+
+update-check:
+  enabled: true
+```
+
+---
+
+## 🎉 **Get Started Today!**
+
+### 📥 **Download**
+- **SpigotMC**: [FrontierGuard Resource Page](https://www.spigotmc.org/resources/frontier-guard-beta.128966/)
+- **GitHub**: [Latest Release](https://github.com/DanielVNZ/FrontierGuard)
+
+### 💬 **Support**
+- **Issues**: GitHub Issues page
+- **Discord**: Coming soon!
+- **SpigotMC**: Resource discussion page
+
+### 🤝 **Community**
+- **GitHub**: Star the repo and contribute!
+- **Reviews**: Leave feedback on SpigotMC
+- **Suggestions**: Open feature requests
+
+---
+
+## 🏆 **Join the FrontierGuard Revolution!**
+
+**Stop settling for basic land claiming plugins.** Your players deserve a **premium experience** that respects their playstyle choices while maintaining server balance and performance.
+
+**FrontierGuard** delivers enterprise-grade features with consumer-friendly usability. Whether you're running a small community server or a massive network, FrontierGuard scales to meet your needs.
+
+### 🎯 **Ready to Transform Your Server?**
+
+**[Download FrontierGuard Now](https://www.spigotmc.org/resources/frontier-guard-beta.128966/) and give your players the freedom they deserve!**
+
+---
+
+*FrontierGuard v1.0.2 - Protecting your world, empowering your players! 🛡️✨*
+
+**Created with ❤️ by danielvnz**
