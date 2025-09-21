@@ -254,11 +254,13 @@ public class GuiManager {
                     economy.withdrawPlayer(player, nextPrice);
                     
                     // Increase player's purchased claims and wait for completion
-                    purchasedClaimsDao.incrementPurchasedClaims(player.getUniqueId()).thenRun(() -> {
+                    purchasedClaimsDao.incrementPurchasedClaims(player.getUniqueId()).thenAccept(newPurchasedCount -> {
                         // Refresh the GUI to show updated information
                         Bukkit.getScheduler().runTask(plugin, () -> {
+                            // Get the updated claim limit after purchase
+                            int newLimit = 1 + newPurchasedCount; // Base limit + purchased claims
                             openMainGui(player);
-                            player.sendMessage(Component.text("Successfully purchased 1 additional claim! New limit: " + getMaxClaims(player), NamedTextColor.GREEN));
+                            player.sendMessage(Component.text("Successfully purchased 1 additional claim! New limit: " + newLimit, NamedTextColor.GREEN));
                         });
                     }).exceptionally(throwable -> {
                         plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error purchasing claims for player: " + player.getName(), throwable);
@@ -355,6 +357,32 @@ public class GuiManager {
         int baseLimit = 1;
         int purchasedClaims = getPurchasedClaims(player);
         return baseLimit + purchasedClaims;
+    }
+    
+    /**
+     * Gets the maximum claims a player can have asynchronously
+     */
+    private CompletableFuture<Integer> getMaxClaimsAsync(Player player) {
+        // Check for unlimited claims permission
+        if (player.hasPermission("frontierguard.claims.unlimited")) {
+            return CompletableFuture.completedFuture(Integer.MAX_VALUE);
+        }
+        
+        // Check for specific claim amount permissions
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                return CompletableFuture.completedFuture(i);
+            }
+        }
+        
+        // Check for wildcard permission
+        if (player.hasPermission("frontierguard.claimamount.*")) {
+            return CompletableFuture.completedFuture(Integer.MAX_VALUE);
+        }
+        
+        // Base limit (1) + purchased claims
+        int baseLimit = 1;
+        return getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims);
     }
     
     /**
@@ -841,6 +869,17 @@ public class GuiManager {
             plugin.getLogger().log(Level.WARNING, "Error getting purchased claims for player: " + player.getName(), e);
             return 0;
         }
+    }
+    
+    /**
+     * Gets the number of claims a player has purchased asynchronously
+     */
+    public CompletableFuture<Integer> getPurchasedClaimsAsync(Player player) {
+        return purchasedClaimsDao.getPurchasedClaims(player.getUniqueId())
+            .exceptionally(throwable -> {
+                plugin.getLogger().log(Level.WARNING, "Error getting purchased claims for player: " + player.getName(), throwable);
+                return 0;
+            });
     }
     
     /**
