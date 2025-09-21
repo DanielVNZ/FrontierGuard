@@ -27,7 +27,7 @@ update-check:
   check-interval-hours: 24 # How often to check for updates (in hours)
   notify-on-join: true    # Notify players about updates when they join
   notify-admins-only: true # Only notify admins about updates
-  download-url: "https://spigotmc.org/resources/frontierguard" # URL to download page
+  download-url: "https://www.spigotmc.org/resources/frontier-guard-beta.128966/" # URL to download page
 
 # Plugin messages
 # You can use Minecraft color codes with & symbol:

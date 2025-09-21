@@ -33,7 +33,7 @@ public class UpdateChecker {
     
     // SpigotMC API endpoints
     private static final String SPIGOT_API_URL = "https://api.spigotmc.org/legacy/update.php?resource=";
-    private static final String SPIGOT_RESOURCE_ID = "123456"; // Replace with actual resource ID
+    private static final String SPIGOT_RESOURCE_ID = "128966"; // Replace with actual resource ID
     
     // Update checking state
     private boolean updateAvailable = false;
