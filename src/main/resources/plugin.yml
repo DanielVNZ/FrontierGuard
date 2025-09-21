@@ -1,0 +1,124 @@
+name: FrontierGuard
+version: '1.0.0'
+main: com.danielvnz.landclaimer.LandClaimerPlugin
+api-version: '1.20'
+author: danielvnz
+description: A Minecraft plugin for land claiming with PvP mechanics
+website: https://github.com/danielvnz/landclaimer
+
+commands:
+  frontierguard:
+    description: Main FrontierGuard command
+    usage: /frontierguard <claim|unclaim|claims|claiminfo|gui|cooldown|setpvpzone|createpvparea|deletepvparea|listpvpareas|reload|setmode|forcemode|adminclaims|setclaimlimit|update|help>
+    permission: frontierguard.use
+    aliases: [fg]
+
+permissions:
+  frontierguard.*:
+    description: Gives access to all FrontierGuard commands
+    children:
+      frontierguard.use: true
+      frontierguard.claim: true
+      frontierguard.unclaim: true
+      frontierguard.claims: true
+      frontierguard.claiminfo: true
+      frontierguard.gui: true
+      frontierguard.changemode: true
+      frontierguard.invite: true
+      frontierguard.uninvite: true
+      frontierguard.invitations: true
+      frontierguard.cooldown: true
+      frontierguard.admin: true
+  frontierguard.use:
+    description: Allows using the main frontierguard command
+    default: true
+  frontierguard.claim:
+    description: Allows claiming chunks
+    default: true
+  frontierguard.unclaim:
+    description: Allows unclaiming chunks
+    default: true
+  frontierguard.claims:
+    description: Allows listing claims
+    default: true
+  frontierguard.claiminfo:
+    description: Allows checking claim information
+    default: true
+  frontierguard.gui:
+    description: Allows opening the GUI menu
+    default: true
+  frontierguard.invite:
+    description: Allows inviting players to claims
+    default: true
+  frontierguard.uninvite:
+    description: Allows uninviting players from claims
+    default: true
+  frontierguard.invitations:
+    description: Allows viewing claim invitations
+    default: true
+  frontierguard.cooldown:
+    description: Allows checking mode change cooldown
+    default: true
+  frontierguard.admin:
+    description: Allows access to admin commands
+    default: op
+    children:
+      frontierguard.admin.pvparea: true
+      frontierguard.admin.reload: true
+      frontierguard.admin.setmode: true
+      frontierguard.admin.forcemode: true
+      frontierguard.admin.claims: true
+      frontierguard.admin.setclaimlimit: true
+      frontierguard.admin.update: true
+      frontierguard.bypass: true
+  frontierguard.admin.pvparea:
+    description: Allows managing PvP areas (setpvpzone, createpvparea, deletepvparea, listpvpareas)
+    default: op
+  frontierguard.admin.reload:
+    description: Allows reloading plugin configuration
+    default: op
+  frontierguard.admin.setmode:
+    description: Allows setting player modes
+    default: op
+  frontierguard.admin.forcemode:
+    description: Allows forcing player mode changes (bypasses cooldown)
+    default: op
+  frontierguard.admin.claims:
+    description: Allows viewing all player claims
+    default: op
+  frontierguard.admin.setclaimlimit:
+    description: Allows setting claim limits for permission groups
+    default: op
+  frontierguard.admin.update:
+    description: Allows checking for plugin updates
+    default: op
+  frontierguard.bypass:
+    description: Bypasses all protection systems
+    default: op
+  frontierguard.claims.unlimited:
+    description: Allows unlimited claims
+    default: false
+  frontierguard.claims.vip:
+    description: VIP claim limit group (25 claims)
+    default: false
+  frontierguard.claims.premium:
+    description: Premium claim limit group (50 claims)
+    default: false
+  frontierguard.changemode:
+    description: Allows changing player mode (via GUI)
+    default: true
+  frontierguard.claimamount.*:
+    description: Allows unlimited claims (overrides all other claim limits)
+    default: false
+  frontierguard.claimamount.10:
+    description: Allows up to 10 claims
+    default: false
+  frontierguard.claimamount.20:
+    description: Allows up to 20 claims
+    default: false
+  frontierguard.claimamount.50:
+    description: Allows up to 50 claims
+    default: false
+  frontierguard.claimamount.100:
+    description: Allows up to 100 claims
+    default: false

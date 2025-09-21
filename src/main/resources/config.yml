@@ -1,0 +1,81 @@
+# LandClaimer Plugin Configuration
+
+# Claim limits per permission group
+# All players start with 1 claim by default, but can buy more through the GUI
+# These limits can be overridden by permissions (e.g., frontierguard.claimamount.10)
+claim-limits:
+  default: 1      # Default claim limit for all players (can be increased by buying claims)
+  vip: 1         # Claim limit for players with landclaimer.claims.vip permission
+  premium: 1     # Claim limit for players with landclaimer.claims.premium permission
+
+# Database configuration
+database:
+  type: sqlite              # Database type (currently only sqlite is supported)
+  file: landclaimer.db     # Database file name (stored in plugin data folder)
+
+# Mode change cooldown configuration
+mode-change:
+  cooldown-hours: 24       # Hours players must wait between mode changes (default: 24 hours = 1 day)
+
+# Show command configuration
+show:
+  radius: 3               # Radius in chunks to search for claims when using /fg show (1-10)
+
+# Update checking configuration
+update-check:
+  enabled: true           # Enable automatic update checking
+  check-interval-hours: 24 # How often to check for updates (in hours)
+  notify-on-join: true    # Notify players about updates when they join
+  notify-admins-only: true # Only notify admins about updates
+  download-url: "https://spigotmc.org/resources/frontierguard" # URL to download page
+
+# Plugin messages
+# You can use Minecraft color codes with & symbol:
+# &0 = Black, &1 = Dark Blue, &2 = Dark Green, &3 = Dark Aqua
+# &4 = Dark Red, &5 = Dark Purple, &6 = Gold, &7 = Gray
+# &8 = Dark Gray, &9 = Blue, &a = Green, &b = Aqua
+# &c = Red, &d = Light Purple, &e = Yellow, &f = White
+# &k = Obfuscated, &l = Bold, &m = Strikethrough, &n = Underline, &o = Italic, &r = Reset
+messages:
+  # Mode selection
+  mode-selection-title: "&6&lSelect Your Game Mode"
+  peaceful-mode-name: "&a&lPeaceful Mode"
+  normal-mode-name: "&c&lNormal Mode"
+  peaceful-mode-description: "&7PvE gameplay with land claiming protection"
+  normal-mode-description: "&7Full PvP survival gameplay"
+  
+  # Claiming messages
+  claim-success: "&a&lChunk claimed successfully!"
+  claim-failed-already-claimed: "&c&lThis chunk is already claimed!"
+  claim-failed-limit-reached: "&c&lYou have reached your claim limit!"
+  claim-failed-normal-mode: "&c&lOnly peaceful players can claim chunks!"
+  
+  # Unclaiming messages
+  unclaim-success: "&a&lChunk unclaimed successfully!"
+  unclaim-failed-not-owner: "&c&lYou don't own this chunk!"
+  
+  # Protection messages
+  protection-block-break: "&c&lYou cannot break blocks in this protected area!"
+  protection-block-place: "&c&lYou cannot place blocks in this protected area!"
+  protection-container-access: "&c&lYou cannot access containers in this protected area!"
+  
+  # PvP area messages
+  pvp-area-enter: "&e&lWarning: &cYou are entering a PvP area!"
+  pvp-area-exit: "&a&lYou have left the PvP area. &7Protection restored."
+  pvp-area-no-build: "&c&lYou cannot build in PvP areas!"
+  pvp-area-no-break: "&c&lYou cannot break blocks in PvP areas!"
+  
+  # Mode change confirmation messages
+  mode-change-confirm: "&e&lAre you sure you want to change to &6{0}&e mode? &cYou won't be able to change for &6{1}&c hours.\n&a&lCONFIRMATION: &aType &6&l/fg Y &ato continue or &6&l/fg N &ato cancel."
+  mode-change-confirm-with-claims: "&e&lAre you sure you want to change to &6{0}&e mode? &cYou won't be able to change for &6{1}&c hours.\n&c&lWARNING: &cAll your claims will be deleted!\n&a&lCONFIRMATION: &aType &6&l/fg Y &ato continue or &6&l/fg N &ato cancel."
+  mode-change-cancelled: "&c&lMode change cancelled. You remain in &6{0}&c mode."
+  mode-change-confirmed: "&a&lMode change confirmed! Changing to &6{0}&a mode..."
+  mode-change-invalid-response: "&c&lInvalid response! Type &aY&c to confirm or &cN&c to cancel."
+  
+  # Explosion protection messages
+  explosion-blocked: "&c&lExplosion blocked! You cannot damage protected areas."
+  
+  # Claim entry/exit messages
+  claim-enter-own: "&a&lEntering your claim"
+  claim-enter-other: "&e&lEntering {0}'s claim"
+  claim-exit: "&b&lLeaving claimed land"
