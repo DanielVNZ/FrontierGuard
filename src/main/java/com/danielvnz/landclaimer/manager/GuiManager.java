@@ -521,13 +521,10 @@ public class GuiManager {
         lore.add("");
         lore.add("&7Next Purchase Price: &a$" + nextPrice);
         
-        // Add claim coordinates if player has claims
+        // Add help text for viewing claim coordinates
         if (playerClaims != null && !playerClaims.isEmpty()) {
             lore.add("");
-            lore.add("&7Your Claims:");
-            for (com.danielvnz.landclaimer.model.ClaimData claim : playerClaims) {
-                lore.add("&f(" + claim.getChunkX() + ", " + claim.getChunkZ() + ") &7in &f" + claim.getWorldName());
-            }
+            lore.add("&7Use &f/fg claims &7to view coordinates");
         }
         
         return createGuiItem(Material.MAP, "Claim Information", lore);
@@ -599,6 +596,9 @@ public class GuiManager {
             initialLoreComponents.add(Component.text("• Set build permissions", NamedTextColor.WHITE));
             initialLoreComponents.add(Component.text("• Set container access", NamedTextColor.WHITE));
             initialLoreComponents.add(Component.text("• Manage invitation rights", NamedTextColor.WHITE));
+            initialLoreComponents.add(Component.text(""));
+            initialLoreComponents.add(Component.text("Use /fg invite <name> to", NamedTextColor.AQUA));
+            initialLoreComponents.add(Component.text("invite new players!", NamedTextColor.AQUA));
             
             meta.lore(initialLoreComponents);
             item.setItemMeta(meta);
@@ -638,6 +638,9 @@ public class GuiManager {
                             updatedLoreComponents.add(Component.text("• Set build permissions", NamedTextColor.WHITE));
                             updatedLoreComponents.add(Component.text("• Set container access", NamedTextColor.WHITE));
                             updatedLoreComponents.add(Component.text("• Manage invitation rights", NamedTextColor.WHITE));
+                            updatedLoreComponents.add(Component.text(""));
+                            updatedLoreComponents.add(Component.text("Use /fg invite <name> to", NamedTextColor.AQUA));
+                            updatedLoreComponents.add(Component.text("invite new players!", NamedTextColor.AQUA));
                             
                             updatedMeta.lore(updatedLoreComponents);
                             updatedItem.setItemMeta(updatedMeta);

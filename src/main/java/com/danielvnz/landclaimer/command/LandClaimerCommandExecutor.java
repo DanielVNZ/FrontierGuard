@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.logging.Level;
 
 /**
  * Command executor for LandClaimer plugin commands.
@@ -201,8 +202,39 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             return true;
         }
         
-        // Send header
-        player.sendMessage(Component.text("=== Your Claims ===", NamedTextColor.GOLD, TextDecoration.BOLD));
+        // Get claim limit for display
+        int totalClaimLimit = 1; // Base limit
+        try {
+            // Get purchased claims from GUI manager
+            int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
+            totalClaimLimit += purchasedClaims;
+            
+            // Check for permission bonuses
+            if (player.hasPermission("frontierguard.claims.unlimited")) {
+                totalClaimLimit = Integer.MAX_VALUE;
+            } else if (player.hasPermission("frontierguard.claimamount.*")) {
+                totalClaimLimit = Integer.MAX_VALUE;
+            } else {
+                // Check for specific claim amount permissions and add them
+                int permissionBonus = 0;
+                for (int i = 1; i <= 1000; i++) {
+                    if (player.hasPermission("frontierguard.claimamount." + i)) {
+                        permissionBonus = Math.max(permissionBonus, i);
+                    }
+                }
+                totalClaimLimit += permissionBonus;
+            }
+        } catch (Exception e) {
+            plugin.getLogger().log(Level.WARNING, "Error getting claim limit for claims command", e);
+        }
+        
+        // Send header with claim count
+        String limitText = (totalClaimLimit == Integer.MAX_VALUE) ? "∞" : String.valueOf(totalClaimLimit);
+        player.sendMessage(Component.text("=== Your Claims (", NamedTextColor.GOLD, TextDecoration.BOLD)
+            .append(Component.text(claims.size(), NamedTextColor.WHITE, TextDecoration.BOLD))
+            .append(Component.text("/", NamedTextColor.GRAY, TextDecoration.BOLD))
+            .append(Component.text(limitText, NamedTextColor.AQUA, TextDecoration.BOLD))
+            .append(Component.text(") ===", NamedTextColor.GOLD, TextDecoration.BOLD)));
         
         // Send each claim
         for (ClaimData claim : claims) {
@@ -217,9 +249,12 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             player.sendMessage(claimInfo);
         }
         
-        // Send claim count
-        player.sendMessage(Component.text("Total claims: ", NamedTextColor.GREEN)
-            .append(Component.text(claims.size(), NamedTextColor.WHITE, TextDecoration.BOLD)));
+        // Send summary
+        int unclaimed = (totalClaimLimit == Integer.MAX_VALUE) ? Integer.MAX_VALUE : (totalClaimLimit - claims.size());
+        String unclaimedText = (unclaimed == Integer.MAX_VALUE) ? "∞" : String.valueOf(unclaimed);
+        
+        player.sendMessage(Component.text("Unclaimed slots: ", NamedTextColor.YELLOW)
+            .append(Component.text(unclaimedText, NamedTextColor.WHITE, TextDecoration.BOLD)));
         
         return true;
     }
