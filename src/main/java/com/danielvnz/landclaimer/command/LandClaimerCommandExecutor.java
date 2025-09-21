@@ -83,6 +83,8 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
                 return handleShowCommand(player, args);
             case "update":
                 return handleUpdateCommand(player, args);
+            case "testeconomy":
+                return handleTestEconomyCommand(player, args);
             case "setpvpzone":
                 return handleSetPvpZoneCommand(player, args);
             case "createpvparea":
@@ -1068,5 +1070,49 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
         
         return true;
     }
+    
+    /**
+     * Handles the test economy command (debug)
+     */
+    private boolean handleTestEconomyCommand(Player player, String[] args) {
+        // Check if player has admin permission
+        if (!player.hasPermission("frontierguard.admin")) {
+            player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+            return true;
+        }
+        
+        player.sendMessage(Component.text("=== Economy Debug Info ===", NamedTextColor.GOLD, TextDecoration.BOLD));
+        
+        // Test Vault connection
+        if (plugin.getEconomy() == null) {
+            player.sendMessage(Component.text("❌ Economy: NOT CONNECTED", NamedTextColor.RED));
+            player.sendMessage(Component.text("Vault plugin not found or economy provider not available", NamedTextColor.GRAY));
+        } else {
+            player.sendMessage(Component.text("✅ Economy: CONNECTED", NamedTextColor.GREEN));
+            
+            // Test economy functions
+            double balance = plugin.getEconomy().getBalance(player);
+            player.sendMessage(Component.text("Your balance: $" + String.format("%.2f", balance), NamedTextColor.YELLOW));
+            
+            // Test economy provider
+            String provider = plugin.getEconomy().getName();
+            player.sendMessage(Component.text("Economy provider: " + provider, NamedTextColor.YELLOW));
+        }
+        
+        // Test database
+        try {
+            int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
+            player.sendMessage(Component.text("Purchased claims: " + purchasedClaims, NamedTextColor.YELLOW));
+        } catch (Exception e) {
+            player.sendMessage(Component.text("❌ Database error: " + e.getMessage(), NamedTextColor.RED));
+        }
+        
+        // Test claim limits
+        int maxClaims = plugin.getConfigurationManager().getClaimLimit("default");
+        player.sendMessage(Component.text("Default claim limit: " + maxClaims, NamedTextColor.YELLOW));
+        
+        return true;
+    }
+    
     
 }

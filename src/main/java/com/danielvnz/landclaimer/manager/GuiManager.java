@@ -253,11 +253,20 @@ public class GuiManager {
                     // Process the purchase
                     economy.withdrawPlayer(player, nextPrice);
                     
-                    // Increase player's purchased claims
-                    purchasedClaimsDao.incrementPurchasedClaims(player.getUniqueId());
-                    
-                    // Refresh the GUI to show updated information
-                    openMainGui(player);
+                    // Increase player's purchased claims and wait for completion
+                    purchasedClaimsDao.incrementPurchasedClaims(player.getUniqueId()).thenRun(() -> {
+                        // Refresh the GUI to show updated information
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            openMainGui(player);
+                            player.sendMessage(Component.text("Successfully purchased 1 additional claim! New limit: " + getMaxClaims(player), NamedTextColor.GREEN));
+                        });
+                    }).exceptionally(throwable -> {
+                        plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error purchasing claims for player: " + player.getName(), throwable);
+                        Bukkit.getScheduler().runTask(plugin, () -> {
+                            player.sendMessage(Component.text("Error purchasing claim! Please contact an administrator.", NamedTextColor.RED));
+                        });
+                        return null;
+                    });
                 } else {
                     player.sendMessage(Component.text("You don't have enough money! You need $" + nextPrice + " but only have $" + String.format("%.2f", balance), NamedTextColor.RED));
                 }
