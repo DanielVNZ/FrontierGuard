@@ -29,68 +29,51 @@ public class GuiListener implements Listener {
     
     /**
      * Handles inventory click events for GUI interfaces
-     * @param event The inventory click event
+     * Modern approach: Clean event handling with proper validation
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryClick(InventoryClickEvent event) {
-        // Check if this is a player clicking
-        if (!(event.getWhoClicked() instanceof Player)) {
+        // Only handle player clicks
+        if (!(event.getWhoClicked() instanceof Player player)) {
             return;
         }
         
-        Player player = (Player) event.getWhoClicked();
+        // Only handle clicks in the top inventory (GUI inventory)
+        if (event.getClickedInventory() != event.getView().getTopInventory()) {
+            return;
+        }
+        
         Inventory inventory = event.getInventory();
         
         // Check if this is a plugin GUI
-        if (!isMainGui(inventory) && !isInvitationManagementGui(inventory)) {
+        if (!isPluginGui(inventory)) {
             return;
         }
         
-        // Cancel the event to prevent item manipulation
+        // Cancel the event immediately to prevent any item manipulation
         event.setCancelled(true);
         
-        // Prevent any item movement
-        event.setResult(org.bukkit.event.Event.Result.DENY);
-        
-        // Schedule a GUI refresh to restore proper item names and lore
-        // Use a small delay to ensure the click handling completes first
-        plugin.getServer().getScheduler().runTaskLater(plugin, () -> {
-            refreshGui(inventory, player);
-        }, 1L);
-        
+        // Handle the click
         try {
             int slot = event.getSlot();
             boolean isRightClick = event.isRightClick();
             
-            plugin.getLogger().info("GUI click detected - Player: " + player.getName() + ", Slot: " + slot + ", RightClick: " + isRightClick + ", GUI: " + inventory.getViewers().get(0).getOpenInventory().getTitle());
-            
             // Handle GUI click based on GUI type
             if (isMainGui(inventory)) {
-                plugin.getLogger().info("Handling main GUI click for slot: " + slot);
-                if (guiManager.handleGuiClick(player, slot)) {
-                    plugin.getLogger().info("Player " + player.getName() + " clicked main GUI slot " + slot + " successfully");
-                } else {
-                    plugin.getLogger().info("Player " + player.getName() + " clicked main GUI slot " + slot + " but handler returned false");
-                }
+                guiManager.handleGuiClick(player, slot);
             } else if (isInvitationManagementGui(inventory)) {
-                plugin.getLogger().info("Handling invitation management GUI click for slot: " + slot);
-                if (guiManager.handleInvitationManagementClick(player, slot, isRightClick)) {
-                    plugin.getLogger().info("Player " + player.getName() + " clicked invitation GUI slot " + slot + " successfully");
-                } else {
-                    plugin.getLogger().info("Player " + player.getName() + " clicked invitation GUI slot " + slot + " but handler returned false");
-                }
-            } else {
-                plugin.getLogger().info("Unknown GUI type - not handling click");
+                guiManager.handleInvitationManagementClick(player, slot, isRightClick);
             }
             
         } catch (Exception e) {
             plugin.getLogger().log(Level.SEVERE, "Error handling GUI click for player: " + player.getName(), e);
+            player.sendMessage(net.kyori.adventure.text.Component.text("An error occurred. Please try again.", net.kyori.adventure.text.format.NamedTextColor.RED));
         }
     }
     
     /**
      * Handles inventory drag events to prevent item manipulation
-     * @param event The inventory drag event
+     * Modern approach: Clean validation and immediate cancellation
      */
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onInventoryDrag(InventoryDragEvent event) {
@@ -98,102 +81,71 @@ public class GuiListener implements Listener {
             return;
         }
         
-        Player player = (Player) event.getWhoClicked();
         Inventory inventory = event.getInventory();
         
-        // Check if this is a plugin GUI
-        if (isMainGui(inventory) || isInvitationManagementGui(inventory)) {
-            plugin.getLogger().info("Cancelling drag event in plugin GUI for player: " + player.getName());
-            // Cancel the event to prevent item manipulation
+        // Check if this is a plugin GUI and cancel immediately
+        if (isPluginGui(inventory)) {
             event.setCancelled(true);
-            event.setResult(org.bukkit.event.Event.Result.DENY);
         }
     }
     
     /**
-     * Handles inventory close events to prevent item theft
-     * @param event The inventory close event
+     * Handles inventory close events
+     * Modern approach: Minimal logging, clean state management
      */
-    @EventHandler(priority = EventPriority.HIGHEST)
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryClose(InventoryCloseEvent event) {
-        if (!(event.getPlayer() instanceof Player)) {
-            return;
-        }
-        
-        Player player = (Player) event.getPlayer();
-        Inventory inventory = event.getInventory();
-        
-        // Check if this is a plugin GUI
-        if (isMainGui(inventory) || isInvitationManagementGui(inventory)) {
-            plugin.getLogger().info("Player " + player.getName() + " closed plugin GUI");
-        }
+        // Clean up any GUI-related state if needed
+        // Using MONITOR priority to ensure this runs after other plugins
+    }
+    
+    /**
+     * Checks if the given inventory is any plugin GUI
+     * Modern approach: Single method for all GUI types
+     */
+    private boolean isPluginGui(Inventory inventory) {
+        return isMainGui(inventory) || isInvitationManagementGui(inventory);
     }
     
     /**
      * Checks if the given inventory is the main GUI
-     * @param inventory The inventory to check
-     * @return true if it's the main GUI, false otherwise
+     * Modern approach: More robust title checking
      */
     private boolean isMainGui(Inventory inventory) {
-        if (inventory == null) {
+        if (inventory == null || inventory.getSize() != 27) {
             return false;
         }
         
-        // Check inventory size and title
-        if (inventory.getSize() != 27) {
+        // Modern approach: Safe title checking with fallback
+        try {
+            if (inventory.getViewers().isEmpty()) {
+                return false;
+            }
+            String title = inventory.getViewers().get(0).getOpenInventory().getTitle();
+            return title != null && title.contains("FrontierGuard Menu");
+        } catch (Exception e) {
             return false;
         }
-        
-        String title = inventory.getViewers().isEmpty() ? "" : 
-            inventory.getViewers().get(0).getOpenInventory().getTitle();
-        
-        return title.contains("FrontierGuard Menu");
     }
     
     /**
      * Checks if the given inventory is the invitation management GUI
-     * @param inventory The inventory to check
-     * @return true if it's the invitation management GUI, false otherwise
+     * Modern approach: More robust title checking
      */
     private boolean isInvitationManagementGui(Inventory inventory) {
         if (inventory == null) {
             return false;
         }
         
-        String title = inventory.getViewers().isEmpty() ? "" : 
-            inventory.getViewers().get(0).getOpenInventory().getTitle();
-        
-        return title.contains("Manage Invitations");
-    }
-    
-    /**
-     * Refreshes the GUI to restore proper item names and lore
-     * @param inventory The inventory to refresh
-     * @param player The player viewing the GUI
-     */
-    private void refreshGui(org.bukkit.inventory.Inventory inventory, Player player) {
-        if (isMainGui(inventory)) {
-            // Refresh main GUI
-            guiManager.openMainGui(player);
-        } else if (isInvitationManagementGui(inventory)) {
-            // Refresh invitation management GUI
-            guiManager.openInvitationManagementGui(player);
+        try {
+            if (inventory.getViewers().isEmpty()) {
+                return false;
+            }
+            String title = inventory.getViewers().get(0).getOpenInventory().getTitle();
+            return title != null && title.contains("Manage Invitations");
+        } catch (Exception e) {
+            return false;
         }
     }
     
-    /**
-     * Refreshes a specific slot in the GUI
-     * @param inventory The inventory containing the slot
-     * @param player The player viewing the GUI
-     * @param slot The slot to refresh
-     */
-    private void refreshGuiSlot(org.bukkit.inventory.Inventory inventory, Player player, int slot) {
-        if (isMainGui(inventory)) {
-            // Refresh specific slot in main GUI
-            guiManager.refreshMainGuiSlot(player, slot);
-        } else if (isInvitationManagementGui(inventory)) {
-            // For invitation GUI, refresh the entire GUI since it's more complex
-            guiManager.openInvitationManagementGui(player);
-        }
-    }
 }

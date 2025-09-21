@@ -225,7 +225,7 @@ public class GuiManager {
     /**
      * Handles buy claims click
      */
-    private boolean handleBuyClaimsClick(Player player) {
+    public boolean handleBuyClaimsClick(Player player) {
         if (!playerModeManager.isPeacefulPlayer(player)) {
             player.sendMessage(Component.text("Only peaceful players can buy claims!", NamedTextColor.RED));
             return true;
@@ -307,7 +307,7 @@ public class GuiManager {
     /**
      * Shows mode change confirmation message
      */
-    private void showModeChangeConfirmation(Player player, PlayerMode newMode) {
+    public void showModeChangeConfirmation(Player player, PlayerMode newMode) {
         int cooldownHours = plugin.getConfigurationManager().getModeChangeCooldownHours();
         PlayerMode currentMode = playerModeManager.getPlayerMode(player);
         boolean willDeleteClaims = currentMode == PlayerMode.PEACEFUL && newMode == PlayerMode.NORMAL;
@@ -440,7 +440,7 @@ public class GuiManager {
     /**
      * Creates the buy claims item
      */
-    private ItemStack createBuyClaimsItem(Player player) {
+    public ItemStack createBuyClaimsItem(Player player) {
         List<String> lore = new ArrayList<>();
         
         if (economy == null) {
@@ -490,7 +490,7 @@ public class GuiManager {
     /**
      * Creates the claim info item
      */
-    private ItemStack createClaimInfoItem(Player player) {
+    public ItemStack createClaimInfoItem(Player player) {
         List<String> lore = new ArrayList<>();
         
         // Get current claim information
@@ -545,7 +545,7 @@ public class GuiManager {
     /**
      * Creates a GUI item with the specified properties
      */
-    private ItemStack createGuiItem(Material material, String name, List<String> lore) {
+    public ItemStack createGuiItem(Material material, String name, List<String> lore) {
         ItemStack item = new ItemStack(material);
         ItemMeta meta = item.getItemMeta();
         
@@ -569,7 +569,7 @@ public class GuiManager {
     /**
      * Creates the manage invitations item for the main GUI
      */
-    private ItemStack createManageInvitationsItem(Player player) {
+    public ItemStack createManageInvitationsItem(Player player) {
         ItemStack item = new ItemStack(Material.PLAYER_HEAD);
         ItemMeta meta = item.getItemMeta();
         
