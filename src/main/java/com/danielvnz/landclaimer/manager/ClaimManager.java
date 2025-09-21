@@ -285,10 +285,20 @@ public class ClaimManager {
                 return false;
             }
             
-            // Check claim limits
-            if (!canClaimMore(player)) {
-                player.sendMessage(Component.text("You have reached your claim limit!", NamedTextColor.RED));
-                return false;
+            // Check claim limits - use async version to get fresh data
+            try {
+                Boolean canClaim = canClaimMoreAsync(player).get();
+                if (!canClaim) {
+                    player.sendMessage(Component.text("You have reached your claim limit!", NamedTextColor.RED));
+                    return false;
+                }
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Error checking claim limits for player: " + player.getName(), e);
+                // Fallback to sync version
+                if (!canClaimMore(player)) {
+                    player.sendMessage(Component.text("You have reached your claim limit!", NamedTextColor.RED));
+                    return false;
+                }
             }
             
             return true;
@@ -326,6 +336,35 @@ public class ClaimManager {
             plugin.getLogger().log(Level.WARNING, "Error checking claim limits for player: " + player.getName(), e);
             return false;
         }
+    }
+    
+    /**
+     * Checks if a player can claim more chunks based on their limits (async version)
+     * @param player The player to check
+     * @return CompletableFuture containing true if they can claim more, false otherwise
+     */
+    private CompletableFuture<Boolean> canClaimMoreAsync(Player player) {
+        return CompletableFuture.supplyAsync(() -> {
+            try {
+                List<ClaimData> currentClaims = claimDataDao.findByOwner(player.getUniqueId()).get();
+                int currentClaimCount = currentClaims.size();
+                
+                // Check for unlimited claims permission first
+                if (player.hasPermission("frontierguard.claims.unlimited")) {
+                    return true;
+                }
+                
+                // Get claim limit asynchronously
+                return getPlayerClaimLimitAsync(player).thenApply(claimLimit -> {
+                    plugin.getLogger().info("Player " + player.getName() + " has " + currentClaimCount + " claims, limit is " + claimLimit);
+                    return currentClaimCount < claimLimit;
+                }).get();
+                
+            } catch (Exception e) {
+                plugin.getLogger().log(Level.WARNING, "Error checking claim limits for player: " + player.getName(), e);
+                return false;
+            }
+        });
     }
     
     /**
@@ -439,5 +478,31 @@ public class ClaimManager {
         int baseLimit = 1;
         int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
         return baseLimit + purchasedClaims;
+    }
+    
+    /**
+     * Gets the claim limit for a player, including purchased claims (async version)
+     */
+    private CompletableFuture<Integer> getPlayerClaimLimitAsync(Player player) {
+        // Check for unlimited claims permission
+        if (player.hasPermission("frontierguard.claims.unlimited")) {
+            return CompletableFuture.completedFuture(Integer.MAX_VALUE);
+        }
+        
+        // Check for specific claim amount permissions
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                return CompletableFuture.completedFuture(i);
+            }
+        }
+        
+        // Check for wildcard permission
+        if (player.hasPermission("frontierguard.claimamount.*")) {
+            return CompletableFuture.completedFuture(Integer.MAX_VALUE);
+        }
+        
+        // Base limit (1) + purchased claims from GuiManager (async)
+        int baseLimit = 1;
+        return plugin.getGuiManager().getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims);
     }
 }
