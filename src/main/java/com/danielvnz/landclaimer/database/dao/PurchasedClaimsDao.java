@@ -86,6 +86,45 @@ public class PurchasedClaimsDao {
             }).join();
         });
     }
+
+    /**
+     * Atomically increments the purchased claims using a single upsert, and returns the new count.
+     * Uses SQLite's ON CONFLICT to avoid race conditions.
+     */
+    public CompletableFuture<Integer> incrementPurchasedClaimsAtomic(UUID playerUuid) {
+        return databaseManager.queryAsync(connection -> {
+            try {
+                // Upsert and increment count atomically
+                String upsertSql = """
+                    INSERT INTO purchased_claims (uuid, purchased_count, last_purchase)
+                    VALUES (?, 1, CURRENT_TIMESTAMP)
+                    ON CONFLICT(uuid) DO UPDATE SET
+                        purchased_count = purchased_count + 1,
+                        last_purchase = CURRENT_TIMESTAMP
+                    """;
+                try (PreparedStatement upsertStmt = connection.prepareStatement(upsertSql)) {
+                    upsertStmt.setString(1, playerUuid.toString());
+                    upsertStmt.executeUpdate();
+                }
+
+                // Fetch the new value
+                String selectSql = "SELECT purchased_count FROM purchased_claims WHERE uuid = ?";
+                try (PreparedStatement selectStmt = connection.prepareStatement(selectSql)) {
+                    selectStmt.setString(1, playerUuid.toString());
+                    try (ResultSet rs = selectStmt.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getInt(1);
+                        }
+                    }
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Error incrementing purchased claims for player: " + playerUuid, e);
+                throw new RuntimeException("Failed to increment purchased claims", e);
+            }
+
+            return 0;
+        });
+    }
     
     /**
      * Deletes purchased claims record for a player

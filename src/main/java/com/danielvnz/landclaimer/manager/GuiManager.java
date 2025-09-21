@@ -36,6 +36,8 @@ public class GuiManager {
     private final ClaimInvitationManager invitationManager;
     private final Economy economy;
     private final PurchasedClaimsDao purchasedClaimsDao;
+    // Cache for purchased claims to ensure immediate consistency after purchase
+    private final java.util.concurrent.ConcurrentHashMap<java.util.UUID, Integer> purchasedClaimsCache = new java.util.concurrent.ConcurrentHashMap<>();
     
     // GUI slot constants
     private static final int MODE_CHANGE_SLOT = 10;
@@ -244,23 +246,26 @@ public class GuiManager {
             }
         }).thenAccept(claimedCount -> {
             Bukkit.getScheduler().runTask(plugin, () -> {
-                // Use total claim limit (including purchased claims) for pricing
-                int totalClaimLimit = getMaxClaims(player);
-                int nextPrice = calculateClaimPrice(totalClaimLimit);
+                // Price should be based on NEXT purchase (current count + 1)
+                int currentPurchasedClaims = getPurchasedClaims(player);
+                int nextPrice = 1000 + (currentPurchasedClaims * 1000); // $1000 for first, $2000 for second, etc.
                 double balance = economy.getBalance(player);
                 
                 if (balance >= nextPrice) {
-                    // Process the purchase
-                    economy.withdrawPlayer(player, nextPrice);
-                    
-                    // Increase player's purchased claims and wait for completion
-                    purchasedClaimsDao.incrementPurchasedClaims(player.getUniqueId()).thenAccept(newPurchasedCount -> {
+                    // Process the purchase with verification
+                    var response = economy.withdrawPlayer(player, nextPrice);
+                    if (!response.transactionSuccess()) {
+                        player.sendMessage(Component.text("Payment failed: " + response.errorMessage, NamedTextColor.RED));
+                        return;
+                    }
+
+                    // Increase player's purchased claims atomically and wait for completion
+                    purchasedClaimsDao.incrementPurchasedClaimsAtomic(player.getUniqueId()).thenAccept(newPurchasedCount -> {
+                        // Update cache immediately
+                        purchasedClaimsCache.put(player.getUniqueId(), newPurchasedCount);
                         // Refresh the GUI to show updated information
                         Bukkit.getScheduler().runTask(plugin, () -> {
-                            // Get the updated claim limit after purchase
-                            int newLimit = 1 + newPurchasedCount; // Base limit + purchased claims
                             openMainGui(player);
-                            player.sendMessage(Component.text("Successfully purchased 1 additional claim! New limit: " + newLimit, NamedTextColor.GREEN));
                         });
                     }).exceptionally(throwable -> {
                         plugin.getLogger().log(java.util.logging.Level.SEVERE, "Error purchasing claims for player: " + player.getName(), throwable);
@@ -326,10 +331,10 @@ public class GuiManager {
     }
     
     /**
-     * Calculates the price for the next claim
+     * Calculates the price for the next claim based on purchased claims count
      */
-    private int calculateClaimPrice(int currentClaimCount) {
-        return 1000 + (currentClaimCount * 1000); // $1000 base + $1000 per existing claim
+    private int calculateClaimPrice(int purchasedClaimsCount) {
+        return 1000 + (purchasedClaimsCount * 1000); // $1000 base + $1000 per purchased claim
     }
     
     /**
@@ -338,25 +343,31 @@ public class GuiManager {
     private int getMaxClaims(Player player) {
         // Check for unlimited claims permission
         if (player.hasPermission("frontierguard.claims.unlimited")) {
+            plugin.getLogger().info("DEBUG getMaxClaims: Player " + player.getName() + " has unlimited claims permission");
             return Integer.MAX_VALUE;
-        }
-        
-        // Check for specific claim amount permissions
-        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
-            if (player.hasPermission("frontierguard.claimamount." + i)) {
-                return i;
-            }
         }
         
         // Check for wildcard permission
         if (player.hasPermission("frontierguard.claimamount.*")) {
+            plugin.getLogger().info("DEBUG getMaxClaims: Player " + player.getName() + " has wildcard claims permission");
             return Integer.MAX_VALUE;
         }
         
-        // Base limit (1) + purchased claims
+        // Start with base limit (1) + purchased claims
         int baseLimit = 1;
         int purchasedClaims = getPurchasedClaims(player);
-        return baseLimit + purchasedClaims;
+        int currentTotal = baseLimit + purchasedClaims;
+        
+        // Check for specific claim amount permissions and ADD to the total
+        int permissionBonus = 0;
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                permissionBonus = Math.max(permissionBonus, i); // Take the highest permission
+            }
+        }
+        
+        int totalLimit = currentTotal + permissionBonus;
+        return totalLimit;
     }
     
     /**
@@ -368,21 +379,23 @@ public class GuiManager {
             return CompletableFuture.completedFuture(Integer.MAX_VALUE);
         }
         
-        // Check for specific claim amount permissions
-        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
-            if (player.hasPermission("frontierguard.claimamount." + i)) {
-                return CompletableFuture.completedFuture(i);
-            }
-        }
-        
         // Check for wildcard permission
         if (player.hasPermission("frontierguard.claimamount.*")) {
             return CompletableFuture.completedFuture(Integer.MAX_VALUE);
         }
         
-        // Base limit (1) + purchased claims
+        // Check for specific claim amount permissions and get the highest
+        int permissionBonus = 0;
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                permissionBonus = Math.max(permissionBonus, i);
+            }
+        }
+        
+        // Base limit (1) + purchased claims + permission bonus
         int baseLimit = 1;
-        return getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims);
+        final int finalPermissionBonus = permissionBonus;
+        return getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims + finalPermissionBonus);
     }
     
     /**
@@ -444,13 +457,14 @@ public class GuiManager {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Error getting player claims for GUI item", e);
         }
         
-        // Use total claim limit for pricing (not just claimed chunks)
-        int totalClaimLimit = getMaxClaims(player);
-        int nextPrice = calculateClaimPrice(totalClaimLimit);
+        // Price should scale with purchased claims count (next purchase)
+        int purchasedClaims = getPurchasedClaims(player);
+        int nextPrice = 1000 + (purchasedClaims * 1000); // $1000 for first, $2000 for second, etc.
         
         lore.add("Click to buy an additional claim");
         lore.add("");
         lore.add("&7Current Status:");
+        int totalClaimLimit = getMaxClaims(player);
         lore.add("&aClaimed: &f" + claimedCount + "&7/&b" + totalClaimLimit);
         lore.add("&eUnclaimed: &f" + (totalClaimLimit - claimedCount));
         lore.add("");
@@ -481,16 +495,18 @@ public class GuiManager {
         
         // Get current claim information
         int claimedCount = 0;
+        List<com.danielvnz.landclaimer.model.ClaimData> playerClaims = null;
         try {
-            claimedCount = claimManager.getPlayerClaims(player).size();
+            playerClaims = claimManager.getPlayerClaims(player);
+            claimedCount = playerClaims.size();
         } catch (Exception e) {
             plugin.getLogger().log(java.util.logging.Level.WARNING, "Error getting player claims for info item", e);
         }
         
         int totalClaimLimit = getMaxClaims(player);
         int unclaimedCount = totalClaimLimit - claimedCount;
-        int nextPrice = calculateClaimPrice(totalClaimLimit);
         int purchasedClaims = getPurchasedClaims(player);
+        int nextPrice = 1000 + (purchasedClaims * 1000);
         
         lore.add("Click to refresh claim information");
         lore.add("");
@@ -504,6 +520,15 @@ public class GuiManager {
         lore.add("&7Total Limit: &b" + totalClaimLimit);
         lore.add("");
         lore.add("&7Next Purchase Price: &a$" + nextPrice);
+        
+        // Add claim coordinates if player has claims
+        if (playerClaims != null && !playerClaims.isEmpty()) {
+            lore.add("");
+            lore.add("&7Your Claims:");
+            for (com.danielvnz.landclaimer.model.ClaimData claim : playerClaims) {
+                lore.add("&f(" + claim.getChunkX() + ", " + claim.getChunkZ() + ") &7in &f" + claim.getWorldName());
+            }
+        }
         
         return createGuiItem(Material.MAP, "Claim Information", lore);
     }
@@ -864,7 +889,14 @@ public class GuiManager {
      */
     public int getPurchasedClaims(Player player) {
         try {
-            return purchasedClaimsDao.getPurchasedClaims(player.getUniqueId()).get();
+            // Use cache first for immediate consistency
+            Integer cached = purchasedClaimsCache.get(player.getUniqueId());
+            if (cached != null) {
+                return cached;
+            }
+            int dbValue = purchasedClaimsDao.getPurchasedClaims(player.getUniqueId()).get();
+            purchasedClaimsCache.put(player.getUniqueId(), dbValue);
+            return dbValue;
         } catch (Exception e) {
             plugin.getLogger().log(Level.WARNING, "Error getting purchased claims for player: " + player.getName(), e);
             return 0;
@@ -875,6 +907,10 @@ public class GuiManager {
      * Gets the number of claims a player has purchased asynchronously
      */
     public CompletableFuture<Integer> getPurchasedClaimsAsync(Player player) {
+        Integer cached = purchasedClaimsCache.get(player.getUniqueId());
+        if (cached != null) {
+            return java.util.concurrent.CompletableFuture.completedFuture(cached);
+        }
         return purchasedClaimsDao.getPurchasedClaims(player.getUniqueId())
             .exceptionally(throwable -> {
                 plugin.getLogger().log(Level.WARNING, "Error getting purchased claims for player: " + player.getName(), throwable);

@@ -4,6 +4,7 @@ import com.danielvnz.landclaimer.LandClaimerPlugin;
 import com.danielvnz.landclaimer.database.DatabaseManager;
 import com.danielvnz.landclaimer.database.dao.ClaimDataDao;
 import com.danielvnz.landclaimer.model.ClaimData;
+import com.danielvnz.landclaimer.database.dao.PurchasedClaimsDao;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -28,11 +29,13 @@ public class ClaimManager {
     private final LandClaimerPlugin plugin;
     private final ClaimDataDao claimDataDao;
     private final PlayerModeManager playerModeManager;
+    private final PurchasedClaimsDao purchasedClaimsDao;
     
     public ClaimManager(LandClaimerPlugin plugin, PlayerModeManager playerModeManager) {
         this.plugin = plugin;
         this.playerModeManager = playerModeManager;
         this.claimDataDao = createClaimDataDao(plugin.getDatabaseManager());
+        this.purchasedClaimsDao = createPurchasedClaimsDao(plugin.getDatabaseManager());
     }
     
     /**
@@ -42,6 +45,13 @@ public class ClaimManager {
      */
     protected ClaimDataDao createClaimDataDao(DatabaseManager databaseManager) {
         return new ClaimDataDao(databaseManager);
+    }
+
+    /**
+     * Creates the PurchasedClaimsDao instance. Can be overridden for testing.
+     */
+    protected PurchasedClaimsDao createPurchasedClaimsDao(DatabaseManager databaseManager) {
+        return new PurchasedClaimsDao(databaseManager);
     }
     
     /**
@@ -327,8 +337,8 @@ public class ClaimManager {
             
             // Get claim limit - use GuiManager's system which includes purchased claims
             int claimLimit = getPlayerClaimLimit(player);
+            int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
             
-            plugin.getLogger().info("Player " + player.getName() + " has " + currentClaimCount + " claims, limit is " + claimLimit);
             
             return currentClaimCount < claimLimit;
             
@@ -356,7 +366,6 @@ public class ClaimManager {
                 
                 // Get claim limit asynchronously
                 return getPlayerClaimLimitAsync(player).thenApply(claimLimit -> {
-                    plugin.getLogger().info("Player " + player.getName() + " has " + currentClaimCount + " claims, limit is " + claimLimit);
                     return currentClaimCount < claimLimit;
                 }).get();
                 
@@ -462,22 +471,25 @@ public class ClaimManager {
             return Integer.MAX_VALUE;
         }
         
-        // Check for specific claim amount permissions
-        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
-            if (player.hasPermission("frontierguard.claimamount." + i)) {
-                return i;
-            }
-        }
-        
         // Check for wildcard permission
         if (player.hasPermission("frontierguard.claimamount.*")) {
             return Integer.MAX_VALUE;
         }
         
-        // Base limit (1) + purchased claims from GuiManager
+        // Start with base limit (1) + purchased claims from GuiManager (uses cache)
         int baseLimit = 1;
         int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
-        return baseLimit + purchasedClaims;
+        int currentTotal = baseLimit + purchasedClaims;
+        
+        // Check for specific claim amount permissions and ADD to the total
+        int permissionBonus = 0;
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                permissionBonus = Math.max(permissionBonus, i); // Take the highest permission
+            }
+        }
+        
+        return currentTotal + permissionBonus;
     }
     
     /**
@@ -489,20 +501,22 @@ public class ClaimManager {
             return CompletableFuture.completedFuture(Integer.MAX_VALUE);
         }
         
-        // Check for specific claim amount permissions
-        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
-            if (player.hasPermission("frontierguard.claimamount." + i)) {
-                return CompletableFuture.completedFuture(i);
-            }
-        }
-        
         // Check for wildcard permission
         if (player.hasPermission("frontierguard.claimamount.*")) {
             return CompletableFuture.completedFuture(Integer.MAX_VALUE);
         }
         
-        // Base limit (1) + purchased claims from GuiManager (async)
+        // Check for specific claim amount permissions and get the highest
+        int permissionBonus = 0;
+        for (int i = 1; i <= 1000; i++) { // Check up to 1000 claims
+            if (player.hasPermission("frontierguard.claimamount." + i)) {
+                permissionBonus = Math.max(permissionBonus, i);
+            }
+        }
+        
+        // Base limit (1) + purchased claims + permission bonus
         int baseLimit = 1;
-        return plugin.getGuiManager().getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims);
+        final int finalPermissionBonus = permissionBonus;
+        return plugin.getGuiManager().getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims + finalPermissionBonus);
     }
 }
