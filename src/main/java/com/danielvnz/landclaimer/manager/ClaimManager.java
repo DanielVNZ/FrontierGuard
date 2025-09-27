@@ -29,13 +29,13 @@ public class ClaimManager {
     private final LandClaimerPlugin plugin;
     private final ClaimDataDao claimDataDao;
     private final PlayerModeManager playerModeManager;
-    private final PurchasedClaimsDao purchasedClaimsDao;
+    private final WorldGuardIntegration worldGuardIntegration;
     
     public ClaimManager(LandClaimerPlugin plugin, PlayerModeManager playerModeManager) {
         this.plugin = plugin;
         this.playerModeManager = playerModeManager;
         this.claimDataDao = createClaimDataDao(plugin.getDatabaseManager());
-        this.purchasedClaimsDao = createPurchasedClaimsDao(plugin.getDatabaseManager());
+        this.worldGuardIntegration = new WorldGuardIntegration(plugin);
     }
     
     /**
@@ -283,6 +283,18 @@ public class ClaimManager {
             return false;
         }
         
+        // Check if chunk is protected by WorldGuard
+        if (worldGuardIntegration.isChunkProtected(chunk)) {
+            String regionName = worldGuardIntegration.getProtectedRegionName(chunk);
+            if (regionName != null) {
+                player.sendMessage(Component.text("This chunk is protected by WorldGuard region: ", NamedTextColor.RED)
+                    .append(Component.text(regionName, NamedTextColor.YELLOW, TextDecoration.BOLD)));
+            } else {
+                player.sendMessage(Component.text("This chunk is protected by WorldGuard and cannot be claimed!", NamedTextColor.RED));
+            }
+            return false;
+        }
+        
         // Check if chunk is already claimed
         try {
             String worldName = chunk.getWorld().getName();
@@ -337,8 +349,6 @@ public class ClaimManager {
             
             // Get claim limit - use GuiManager's system which includes purchased claims
             int claimLimit = getPlayerClaimLimit(player);
-            int purchasedClaims = plugin.getGuiManager().getPurchasedClaims(player);
-            
             
             return currentClaimCount < claimLimit;
             
@@ -518,5 +528,13 @@ public class ClaimManager {
         int baseLimit = 1;
         final int finalPermissionBonus = permissionBonus;
         return plugin.getGuiManager().getPurchasedClaimsAsync(player).thenApply(purchasedClaims -> baseLimit + purchasedClaims + finalPermissionBonus);
+    }
+    
+    /**
+     * Gets the WorldGuard integration instance
+     * @return The WorldGuard integration instance
+     */
+    public WorldGuardIntegration getWorldGuardIntegration() {
+        return worldGuardIntegration;
     }
 }

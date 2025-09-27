@@ -65,6 +65,7 @@ public class PvpProtectionManager {
         // 2. Peaceful players cannot be attacked by anyone outside PVP areas
         // 3. Normal players can attack other normal players freely
         // 4. Normal players cannot attack peaceful players outside PVP areas
+        // 5. Noob players (normal mode) cannot attack or be attacked outside PVP areas
         
         if (attackerMode == PlayerMode.PEACEFUL) {
             // Peaceful players cannot attack anyone outside PVP areas
@@ -76,7 +77,18 @@ public class PvpProtectionManager {
             return false;
         }
         
-        // Both players are normal mode - allow PVP
+        // Check for noob protection (only applies to normal mode players)
+        if (attackerMode == PlayerMode.NORMAL && isPlayerNoob(attacker)) {
+            // Noob players cannot attack anyone outside PVP areas
+            return false;
+        }
+        
+        if (targetMode == PlayerMode.NORMAL && isPlayerNoob(target)) {
+            // Noob players cannot be attacked outside PVP areas
+            return false;
+        }
+        
+        // Both players are normal mode and not noobs - allow PVP
         return true;
     }
     
@@ -120,6 +132,10 @@ public class PvpProtectionManager {
             message = "You cannot attack other players as a peaceful player!";
         } else if (targetMode == PlayerMode.PEACEFUL) {
             message = "You cannot attack peaceful players outside of PVP areas!";
+        } else if (attackerMode == PlayerMode.NORMAL && isPlayerNoob(attacker)) {
+            message = "You cannot attack other players while you have the noob status!";
+        } else if (targetMode == PlayerMode.NORMAL && isPlayerNoob(target)) {
+            message = "You cannot attack players with noob status outside of PVP areas!";
         } else {
             message = "PVP is not allowed in this area!";
         }
@@ -137,6 +153,55 @@ public class PvpProtectionManager {
      */
     private boolean isInPvpArea(org.bukkit.Location location) {
         return pvpAreaManager.isInPvpArea(location);
+    }
+    
+    /**
+     * Checks if a player is considered a "noob" (new player or manually marked)
+     * @param player The player to check
+     * @return true if the player is a noob, false otherwise
+     */
+    private boolean isPlayerNoob(Player player) {
+        if (player == null) {
+            return false;
+        }
+        
+        // Check if player is within first 30 minutes of joining
+        if (isNewPlayer(player)) {
+            return true;
+        }
+        
+        // Check if player is manually marked as noob
+        if (plugin.getNoobManager() != null && plugin.getNoobManager().isPlayerNoob(player)) {
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * Checks if a player is within their first 30 minutes on the server
+     * @param player The player to check
+     * @return true if the player is new, false otherwise
+     */
+    private boolean isNewPlayer(Player player) {
+        if (player == null) {
+            return false;
+        }
+        
+        // Get first played time from Bukkit (returns milliseconds since epoch)
+        long firstPlayedTime = player.getFirstPlayed();
+        
+        if (firstPlayedTime == 0) {
+            // Player has never played before, consider them new
+            return true;
+        }
+        
+        // Calculate minutes since first join
+        long currentTime = System.currentTimeMillis();
+        long timeDifferenceMs = currentTime - firstPlayedTime;
+        long minutesSinceJoin = timeDifferenceMs / (1000 * 60); // Convert to minutes
+        
+        return minutesSinceJoin < 30;
     }
     
     /**

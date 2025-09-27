@@ -3,13 +3,16 @@ package com.danielvnz.landclaimer;
 import com.danielvnz.landclaimer.command.LandClaimerCommandExecutor;
 import com.danielvnz.landclaimer.database.DatabaseManager;
 import com.danielvnz.landclaimer.listener.BlockProtectionListener;
+import com.danielvnz.landclaimer.listener.EnvironmentalDamageListener;
 import com.danielvnz.landclaimer.listener.ExplosionProtectionListener;
 import com.danielvnz.landclaimer.listener.GuiListener;
 import com.danielvnz.landclaimer.listener.ModeSelectionListener;
 import com.danielvnz.landclaimer.listener.PlayerJoinListener;
 import com.danielvnz.landclaimer.listener.PlayerMoveListener;
+import com.danielvnz.landclaimer.listener.PotionProtectionListener;
 import com.danielvnz.landclaimer.listener.PvpAreaSelectionListener;
 import com.danielvnz.landclaimer.listener.PvpProtectionListener;
+import com.danielvnz.landclaimer.listener.ReputationListener;
 import com.danielvnz.landclaimer.manager.ClaimInvitationManager;
 import com.danielvnz.landclaimer.manager.ClaimManager;
 import com.danielvnz.landclaimer.manager.ConfigurationManager;
@@ -19,7 +22,10 @@ import com.danielvnz.landclaimer.manager.PlayerModeManager;
 import com.danielvnz.landclaimer.manager.ProtectionManager;
 import com.danielvnz.landclaimer.manager.PvpAreaManager;
 import com.danielvnz.landclaimer.manager.PvpProtectionManager;
+import com.danielvnz.landclaimer.manager.ReputationManager;
+import com.danielvnz.landclaimer.manager.NoobManager;
 import com.danielvnz.landclaimer.manager.UpdateChecker;
+import com.danielvnz.landclaimer.placeholder.FrontierGuardPlaceholders;
 import com.danielvnz.landclaimer.manager.VisualFeedbackManager;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.plugin.RegisteredServiceProvider;
@@ -42,6 +48,8 @@ public class LandClaimerPlugin extends JavaPlugin {
     private ProtectionManager protectionManager;
     private PvpAreaManager pvpAreaManager;
     private PvpProtectionManager pvpProtectionManager;
+    private ReputationManager reputationManager;
+    private NoobManager noobManager;
     private VisualFeedbackManager visualFeedbackManager;
     private GuiManager guiManager;
     private UpdateChecker updateChecker;
@@ -78,6 +86,9 @@ public class LandClaimerPlugin extends JavaPlugin {
             // Register command executors
             registerCommandExecutors();
             
+            // Register PlaceholderAPI expansion
+            registerPlaceholderAPI();
+            
             initialized = true;
             
             // Log plugin statistics
@@ -108,6 +119,18 @@ public class LandClaimerPlugin extends JavaPlugin {
             if (updateChecker != null) {
                 updateChecker.stop();
                 getLogger().info("Update checker stopped");
+            }
+            
+            // Shutdown reputation manager
+            if (reputationManager != null) {
+                reputationManager.shutdown();
+                getLogger().info("Reputation manager shutdown");
+            }
+            
+            // Shutdown noob manager
+            if (noobManager != null) {
+                noobManager.shutdown();
+                getLogger().info("Noob manager shutdown");
             }
             
             // Shutdown database connection
@@ -192,6 +215,14 @@ public class LandClaimerPlugin extends JavaPlugin {
         pvpAreaManager = new PvpAreaManager(this);
         protectionManager = new ProtectionManager(this, claimManager, playerModeManager, pvpAreaManager);
         pvpProtectionManager = new PvpProtectionManager(this, playerModeManager, pvpAreaManager);
+        
+        // Initialize reputation system
+        var reputationDao = new com.danielvnz.landclaimer.database.dao.PlayerReputationDao(databaseManager);
+        reputationManager = new ReputationManager(this, reputationDao, playerModeManager, pvpAreaManager);
+        
+        // Initialize noob manager
+        noobManager = new NoobManager(this);
+        
         guiManager = new GuiManager(this, playerModeManager, claimManager, economy);
         getLogger().info("Managers initialized successfully");
     }
@@ -208,6 +239,8 @@ public class LandClaimerPlugin extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new BlockProtectionListener(this, protectionManager), this);
         getServer().getPluginManager().registerEvents(new PvpProtectionListener(this, pvpProtectionManager), this);
         getServer().getPluginManager().registerEvents(new ExplosionProtectionListener(this), this);
+        getServer().getPluginManager().registerEvents(new EnvironmentalDamageListener(this, playerModeManager, pvpAreaManager), this);
+        getServer().getPluginManager().registerEvents(new PotionProtectionListener(this, playerModeManager, pvpAreaManager), this);
         
         // Register PVP area selection listener
         getServer().getPluginManager().registerEvents(new PvpAreaSelectionListener(this, pvpAreaManager), this);
@@ -217,6 +250,9 @@ public class LandClaimerPlugin extends JavaPlugin {
         
         // Register GUI listener
         getServer().getPluginManager().registerEvents(new GuiListener(this, guiManager), this);
+        
+        // Register reputation listener
+        getServer().getPluginManager().registerEvents(new ReputationListener(this, reputationManager), this);
         
         getLogger().info("Event listeners registered successfully");
     }
@@ -232,6 +268,18 @@ public class LandClaimerPlugin extends JavaPlugin {
         getCommand("frontierguard").setTabCompleter(commandExecutor);
         
         getLogger().info("Command executors registered successfully");
+    }
+    
+    /**
+     * Registers PlaceholderAPI expansion if PlaceholderAPI is available
+     */
+    private void registerPlaceholderAPI() {
+        if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
+            new FrontierGuardPlaceholders(this, reputationManager, playerModeManager).register();
+            getLogger().info("PlaceholderAPI expansion registered successfully!");
+        } else {
+            getLogger().info("PlaceholderAPI not found. Placeholders will be disabled.");
+        }
     }
     
     /**
@@ -312,6 +360,22 @@ public class LandClaimerPlugin extends JavaPlugin {
      */
     public PvpProtectionManager getPvpProtectionManager() {
         return pvpProtectionManager;
+    }
+    
+    /**
+     * Gets the reputation manager instance
+     * @return The reputation manager
+     */
+    public ReputationManager getReputationManager() {
+        return reputationManager;
+    }
+    
+    /**
+     * Gets the noob manager instance
+     * @return The noob manager
+     */
+    public NoobManager getNoobManager() {
+        return noobManager;
     }
     
     /**

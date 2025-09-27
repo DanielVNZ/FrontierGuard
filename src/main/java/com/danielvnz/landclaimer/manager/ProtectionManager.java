@@ -161,13 +161,8 @@ public class ProtectionManager {
             }
         }
         
-        // Check if the player is in peaceful mode (they should be protected from breaking others' blocks)
-        if (playerModeManager.isPeacefulPlayer(player)) {
-            return false; // Peaceful players can't break blocks in others' claims
-        }
-        
-        // Normal players can break blocks in claimed chunks (for raiding)
-        return true;
+        // Normal players cannot access ANY claimed land under ANY circumstances
+        return false;
     }
     
     /**
@@ -232,13 +227,8 @@ public class ProtectionManager {
             }
         }
         
-        // Check if the player is in peaceful mode (they should be protected from placing in others' claims)
-        if (playerModeManager.isPeacefulPlayer(player)) {
-            return false; // Peaceful players can't place blocks in others' claims
-        }
-        
-        // Normal players can place blocks in claimed chunks (for raiding)
-        return true;
+        // Normal players cannot access ANY claimed land under ANY circumstances
+        return false;
     }
     
     /**
@@ -282,8 +272,10 @@ public class ProtectionManager {
                 }
                 
                 // Use synchronous check for invitation (we'll make this async later if needed)
-                if (invitationManager.canPlayerAccessContainers(player, claim).get()) {
-                    // Additional check: invited players must still be peaceful
+                boolean canAccess = invitationManager.canPlayerAccessContainers(player, claim).get();
+                
+                if (canAccess) {
+                    // Check if invited player is still peaceful (if not, revoke access)
                     if (playerModeManager.isPeacefulPlayer(player)) {
                         return true; // Invited peaceful player can access containers
                     } else {
@@ -303,13 +295,8 @@ public class ProtectionManager {
             }
         }
         
-        // Check if the player is in peaceful mode (they should be protected from accessing others' containers)
-        if (playerModeManager.isPeacefulPlayer(player)) {
-            return false; // Peaceful players can't access containers in others' claims
-        }
-        
-        // Normal players can access containers in claimed chunks (for raiding)
-        return true;
+        // Normal players cannot access ANY claimed land under ANY circumstances
+        return false;
     }
     
     /**
@@ -343,13 +330,46 @@ public class ProtectionManager {
             return true; // Owner can interact with doors/gates in their own claim
         }
         
+        // Check if the player is invited to this claim
+        var claim = claimManager.getClaimInfo(block.getLocation().getChunk());
+        if (claim != null) {
+            try {
+                // Check if player's invitations have been revoked
+                if (revokedInvitations.contains(player.getUniqueId())) {
+                    return false; // Invitations have been revoked
+                }
+                
+                // Use synchronous check for invitation (we'll make this async later if needed)
+                boolean canAccess = invitationManager.canPlayerAccessContainers(player, claim).get();
+                
+                if (canAccess) {
+                    // Check if invited player is still peaceful (if not, revoke access)
+                    if (playerModeManager.isPeacefulPlayer(player)) {
+                        return true; // Invited peaceful player can interact with doors/gates
+                    } else {
+                        // Player is no longer peaceful, immediately revoke invitations
+                        plugin.getLogger().info("Player " + player.getName() + " is no longer peaceful, immediately revoking invitation access");
+                        revokedInvitations.add(player.getUniqueId());
+                        invitationManager.removeAllPlayerInvitations(player.getUniqueId());
+                        return false;
+                    }
+                } else {
+                    // Player is not invited to this claim, deny access
+                    return false;
+                }
+            } catch (Exception e) {
+                plugin.getLogger().warning("Error checking invitation for door access: " + e.getMessage());
+                return false; // Deny access on error
+            }
+        }
+        
         // Check if the player is in peaceful mode (they should be protected from interacting with others' doors/gates)
         if (playerModeManager.isPeacefulPlayer(player)) {
             return false; // Peaceful players can't interact with doors/gates in others' claims
         }
         
-        // Normal players can interact with doors/gates in claimed chunks (for raiding)
-        return true;
+        // Normal players cannot access ANY claimed land under ANY circumstances
+        return false;
     }
     
     /**

@@ -156,6 +156,47 @@ public class ClaimInvitationDao {
     }
     
     /**
+     * Gets the invitation permissions for a player from ANY claim owned by the specified landowner
+     * @param landownerUuid The UUID of the landowner
+     * @param playerUuid The UUID of the player
+     * @return CompletableFuture containing the invitation permissions, or null if not invited
+     */
+    public CompletableFuture<InvitationPermissions> getInvitationPermissionsByOwner(UUID landownerUuid, UUID playerUuid) {
+        return databaseManager.queryAsync(connection -> {
+            String sql = """
+                SELECT ci.claim_id, ci.invited_uuid, ci.invited_by_uuid, ci.can_build, ci.can_access_containers, 
+                       ci.can_manage_invitations, ci.invitation_time
+                FROM claim_invitations ci
+                JOIN land_claims lc ON ci.claim_id = lc.id
+                WHERE lc.owner_uuid = ? AND ci.invited_uuid = ?
+                LIMIT 1
+                """;
+            
+            try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+                stmt.setString(1, landownerUuid.toString());
+                stmt.setString(2, playerUuid.toString());
+                
+                try (ResultSet rs = stmt.executeQuery()) {
+                    if (rs.next()) {
+                        return new InvitationPermissions(
+                            rs.getLong("claim_id"),
+                            UUID.fromString(rs.getString("invited_uuid")),
+                            UUID.fromString(rs.getString("invited_by_uuid")),
+                            rs.getBoolean("can_build"),
+                            rs.getBoolean("can_access_containers"),
+                            rs.getBoolean("can_manage_invitations"),
+                            rs.getLong("invitation_time")
+                        );
+                    }
+                }
+            } catch (SQLException e) {
+                LOGGER.log(Level.WARNING, "Error getting invitation permissions by owner: " + landownerUuid, e);
+            }
+            return null;
+        });
+    }
+    
+    /**
      * Updates the invitation permissions for a player
      * @param permissions The new invitation permissions
      * @return CompletableFuture that completes when the operation is done

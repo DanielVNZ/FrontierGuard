@@ -21,12 +21,10 @@ import java.util.logging.Level;
 public class ClaimInvitationManager {
     
     private final LandClaimerPlugin plugin;
-    private final ClaimManager claimManager;
     private final ClaimInvitationDao invitationDao;
     
     public ClaimInvitationManager(LandClaimerPlugin plugin, ClaimManager claimManager) {
         this.plugin = plugin;
-        this.claimManager = claimManager;
         this.invitationDao = createInvitationDao(plugin.getDatabaseManager());
     }
     
@@ -90,10 +88,10 @@ public class ClaimInvitationManager {
     }
     
     /**
-     * Uninvites a player from a claim
+     * Uninvites a player from all claims owned by the uninviter
      * @param uninviter The player removing the invitation
      * @param uninvitedPlayer The player being uninvited
-     * @param claim The claim to uninvite from
+     * @param claim The claim parameter (can be null, not used anymore)
      * @return CompletableFuture that completes when the operation is done
      */
     public CompletableFuture<Void> uninvitePlayer(Player uninviter, Player uninvitedPlayer, ClaimData claim) {
@@ -137,8 +135,8 @@ public class ClaimInvitationManager {
             return CompletableFuture.completedFuture(true);
         }
         
-        // Check if player is invited and has build permission
-        return invitationDao.getInvitationPermissions(claim.getId(), player.getUniqueId())
+        // Check if player is invited to ANY claim owned by the same landowner and has build permission
+        return invitationDao.getInvitationPermissionsByOwner(claim.getOwnerUuid(), player.getUniqueId())
             .thenApply(permissions -> permissions != null && permissions.canBuild());
     }
     
@@ -154,8 +152,8 @@ public class ClaimInvitationManager {
             return CompletableFuture.completedFuture(true);
         }
         
-        // Check if player is invited and has container access permission
-        return invitationDao.getInvitationPermissions(claim.getId(), player.getUniqueId())
+        // Check if player is invited to ANY claim owned by the same landowner and has container access permission
+        return invitationDao.getInvitationPermissionsByOwner(claim.getOwnerUuid(), player.getUniqueId())
             .thenApply(permissions -> permissions != null && permissions.canAccessContainers());
     }
     

@@ -82,6 +82,8 @@ public class DatabaseManager {
         createPvpAreasTable(isH2);
         createPurchasedClaimsTable();
         createClaimInvitationsTable();
+        createPlayerReputationTable();
+        createNoobStatusTable();
     }
     
     /**
@@ -198,6 +200,45 @@ public class DatabaseManager {
         try (Statement stmt = connection.createStatement()) {
             stmt.execute(sql);
             LOGGER.fine("Created claim_invitations table");
+        }
+    }
+    
+    /**
+     * Creates the player_reputation table
+     * @throws SQLException if table creation fails
+     */
+    private void createPlayerReputationTable() throws SQLException {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS player_reputation (
+                uuid VARCHAR(36) PRIMARY KEY,
+                reputation INTEGER DEFAULT 0 CHECK (reputation >= -15 AND reputation <= 15),
+                last_playtime_update TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                total_playtime_hours REAL DEFAULT 0.0
+            )
+            """;
+        
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(sql);
+            LOGGER.fine("Created player_reputation table");
+        }
+    }
+    
+    /**
+     * Creates the noob_status table
+     * @throws SQLException if table creation fails
+     */
+    private void createNoobStatusTable() throws SQLException {
+        String sql = """
+            CREATE TABLE IF NOT EXISTS noob_status (
+                uuid VARCHAR(36) PRIMARY KEY,
+                expiration_time TIMESTAMP NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+            """;
+        
+        try (Statement stmt = connection.createStatement()) {
+            stmt.execute(sql);
+            LOGGER.fine("Created noob_status table");
         }
     }
     

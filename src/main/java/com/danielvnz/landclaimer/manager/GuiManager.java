@@ -16,10 +16,7 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
@@ -42,8 +39,10 @@ public class GuiManager {
     // GUI slot constants
     private static final int MODE_CHANGE_SLOT = 10;
     private static final int BUY_CLAIMS_SLOT = 12;
+    private static final int REPUTATION_SLOT = 13;
     private static final int CLAIM_INFO_SLOT = 14;
     private static final int MANAGE_INVITATIONS_SLOT = 16;
+    private static final int HELP_SLOT = 21;
     private static final int CLOSE_SLOT = 22;
     
     // Map to store pending mode changes for confirmation
@@ -88,6 +87,12 @@ public class GuiManager {
             ItemStack buyClaimsItem = createBuyClaimsItem(player);
             gui.setItem(BUY_CLAIMS_SLOT, buyClaimsItem);
             
+            // Reputation item (only for normal players)
+            if (playerModeManager.isNormalPlayer(player)) {
+                ItemStack reputationItem = createReputationItem(player);
+                gui.setItem(REPUTATION_SLOT, reputationItem);
+            }
+            
             // Claim info item
             ItemStack claimInfoItem = createClaimInfoItem(player);
             gui.setItem(CLAIM_INFO_SLOT, claimInfoItem);
@@ -101,9 +106,16 @@ public class GuiManager {
                 }
             }
             
+            // Help item
+            ItemStack helpItem = createHelpItem();
+            gui.setItem(HELP_SLOT, helpItem);
+            
             // Close item
             ItemStack closeItem = createCloseItem();
             gui.setItem(CLOSE_SLOT, closeItem);
+            
+            // Fill empty slots with stained glass panes for professional look
+            fillEmptySlots(gui);
             
             player.openInventory(gui);
             plugin.getLogger().info("Opened main GUI for player: " + player.getName());
@@ -134,6 +146,9 @@ public class GuiManager {
             case BUY_CLAIMS_SLOT:
                 plugin.getLogger().info("Handling buy claims click");
                 return handleBuyClaimsClick(player);
+            case REPUTATION_SLOT:
+                plugin.getLogger().info("Handling reputation click");
+                return handleReputationClick(player);
             case CLAIM_INFO_SLOT:
                 plugin.getLogger().info("Handling claim info click");
                 return handleClaimInfoClick(player);
@@ -141,6 +156,9 @@ public class GuiManager {
                 plugin.getLogger().info("Handling manage invitations click - opening invitation management GUI");
                 openInvitationManagementGui(player);
                 return true;
+            case HELP_SLOT:
+                plugin.getLogger().info("Handling help click");
+                return handleHelpClick(player);
             case CLOSE_SLOT:
                 plugin.getLogger().info("Handling close click");
                 player.closeInventory();
@@ -300,6 +318,36 @@ public class GuiManager {
                 openMainGui(player);
             });
         });
+        
+        return true;
+    }
+    
+    /**
+     * Handles help click - sends help message to player
+     */
+    private boolean handleHelpClick(Player player) {
+        // Send the help message directly to the player
+        player.sendMessage(Component.text("=== FrontierGuard Commands ===", NamedTextColor.GOLD, TextDecoration.BOLD));
+        player.sendMessage(Component.text("/fg claim", NamedTextColor.YELLOW)
+            .append(Component.text(" - Claim the chunk you're standing in (peaceful mode only)", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg unclaim", NamedTextColor.YELLOW)
+            .append(Component.text(" - Unclaim the chunk you're standing in", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg claims", NamedTextColor.YELLOW)
+            .append(Component.text(" - List all your claims", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg claiminfo", NamedTextColor.YELLOW)
+            .append(Component.text(" - Show information about the current chunk", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg show", NamedTextColor.YELLOW)
+            .append(Component.text(" - Show claim boundaries near you for 5 seconds", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg invite <player>", NamedTextColor.YELLOW)
+            .append(Component.text(" - Invite a player to your claim", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg uninvite <player>", NamedTextColor.YELLOW)
+            .append(Component.text(" - Remove a player's access to your claim", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg invitations", NamedTextColor.YELLOW)
+            .append(Component.text(" - View invited players for your claim", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg cooldown", NamedTextColor.YELLOW)
+            .append(Component.text(" - Check your mode change cooldown status", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/fg help", NamedTextColor.YELLOW)
+            .append(Component.text(" - Show this help message", NamedTextColor.WHITE)));
         
         return true;
     }
@@ -531,6 +579,41 @@ public class GuiManager {
     }
     
     /**
+     * Creates the help item
+     */
+    private ItemStack createHelpItem() {
+        List<String> lore = new ArrayList<>();
+        lore.add("Click to view all available commands");
+        lore.add("");
+        lore.add("&6&lLand Management:");
+        lore.add("&e/fg claim &7- Claim current chunk");
+        lore.add("&e/fg unclaim &7- Release current chunk");
+        lore.add("&e/fg claims &7- List all your claims");
+        lore.add("&e/fg claiminfo &7- Check chunk ownership");
+        lore.add("&e/fg show &7- Show claim boundaries");
+        lore.add("");
+        lore.add("&6&lSocial Features:");
+        lore.add("&e/fg invite <player> &7- Grant access");
+        lore.add("&e/fg uninvite <player> &7- Revoke access");
+        lore.add("&e/fg invitations &7- Manage invitations");
+        lore.add("");
+        lore.add("&6&lPlayer Systems:");
+        lore.add("&e/fg cooldown &7- Check mode timer");
+        
+        ItemStack item = createGuiItem(Material.ENCHANTED_BOOK, "Help & Commands", lore);
+        
+        // Add enchantment glow effect
+        ItemMeta meta = item.getItemMeta();
+        if (meta != null) {
+            meta.addEnchant(org.bukkit.enchantments.Enchantment.UNBREAKING, 1, true);
+            meta.addItemFlags(org.bukkit.inventory.ItemFlag.HIDE_ENCHANTS);
+            item.setItemMeta(meta);
+        }
+        
+        return item;
+    }
+    
+    /**
      * Creates the close item
      */
     private ItemStack createCloseItem() {
@@ -564,6 +647,25 @@ public class GuiManager {
         }
         
         return item;
+    }
+    
+    /**
+     * Fills empty slots in the GUI with stained glass panes for a professional look
+     */
+    private void fillEmptySlots(Inventory gui) {
+        ItemStack glassPane = new ItemStack(Material.GRAY_STAINED_GLASS_PANE);
+        ItemMeta glassMeta = glassPane.getItemMeta();
+        if (glassMeta != null) {
+            glassMeta.displayName(Component.text("", NamedTextColor.WHITE));
+            glassPane.setItemMeta(glassMeta);
+        }
+        
+        // Fill all empty slots with glass panes
+        for (int i = 0; i < gui.getSize(); i++) {
+            if (gui.getItem(i) == null) {
+                gui.setItem(i, glassPane);
+            }
+        }
     }
     
     /**
@@ -710,18 +812,8 @@ public class GuiManager {
         }
         gui.setItem(13, loadingItem);
         
-        // Fill empty slots with barrier blocks
-        for (int i = 1; i < 27; i++) {
-            if (i != 13) { // Don't overwrite loading item
-                ItemStack barrier = new ItemStack(Material.BARRIER);
-                ItemMeta barrierMeta = barrier.getItemMeta();
-                if (barrierMeta != null) {
-                    barrierMeta.displayName(Component.text("", NamedTextColor.WHITE));
-                    barrier.setItemMeta(barrierMeta);
-                }
-                gui.setItem(i, barrier);
-            }
-        }
+        // Fill empty slots with stained glass panes for professional look
+        fillEmptySlots(gui);
         
         player.openInventory(gui);
         plugin.getLogger().info("Opened invitation management GUI for " + player.getName() + " with loading state");
@@ -750,16 +842,8 @@ public class GuiManager {
                         plugin.getLogger().info("Added player " + getPlayerName(perm.getInvitedUuid()) + " to slot " + (i + 9));
                     }
                     
-                    // Fill remaining slots with barrier blocks
-                    for (int i = permissions.size() + 9; i < 27; i++) {
-                        ItemStack barrier = new ItemStack(Material.BARRIER);
-                        ItemMeta barrierMeta = barrier.getItemMeta();
-                        if (barrierMeta != null) {
-                            barrierMeta.displayName(Component.text("", NamedTextColor.WHITE));
-                            barrier.setItemMeta(barrierMeta);
-                        }
-                        updatedGui.setItem(i, barrier);
-                    }
+                    // Fill remaining slots with stained glass panes
+                    fillEmptySlots(updatedGui);
                     
                     plugin.getLogger().info("Updated invitation management GUI for " + player.getName() + " with " + permissions.size() + " players");
                 }
@@ -814,16 +898,8 @@ public class GuiManager {
                         plugin.getLogger().info("Refreshed player " + getPlayerName(perm.getInvitedUuid()) + " in slot " + (i + 9));
                     }
                     
-                    // Fill remaining slots with barrier blocks
-                    for (int i = permissions.size() + 9; i < 27; i++) {
-                        ItemStack barrier = new ItemStack(Material.BARRIER);
-                        ItemMeta barrierMeta = barrier.getItemMeta();
-                        if (barrierMeta != null) {
-                            barrierMeta.displayName(Component.text("", NamedTextColor.WHITE));
-                            barrier.setItemMeta(barrierMeta);
-                        }
-                        gui.setItem(i, barrier);
-                    }
+                    // Fill remaining slots with stained glass panes
+                    fillEmptySlots(gui);
                     
                     plugin.getLogger().info("Refreshed invitation management GUI for " + player.getName() + " with " + permissions.size() + " players");
                 }
@@ -1043,6 +1119,11 @@ public class GuiManager {
             case BUY_CLAIMS_SLOT:
                 inventory.setItem(slot, createBuyClaimsItem(player));
                 break;
+            case REPUTATION_SLOT:
+                if (playerModeManager.isNormalPlayer(player)) {
+                    inventory.setItem(slot, createReputationItem(player));
+                }
+                break;
             case CLAIM_INFO_SLOT:
                 inventory.setItem(slot, createClaimInfoItem(player));
                 break;
@@ -1054,10 +1135,130 @@ public class GuiManager {
                     }
                 }
                 break;
+            case HELP_SLOT:
+                inventory.setItem(slot, createHelpItem());
+                break;
             case CLOSE_SLOT:
                 inventory.setItem(slot, createCloseItem());
                 break;
         }
+    }
+    
+    /**
+     * Creates the reputation display item for normal players
+     * @param player The player to create the item for
+     * @return The reputation item stack
+     */
+    private ItemStack createReputationItem(Player player) {
+        if (player == null || !playerModeManager.isNormalPlayer(player)) {
+            return null;
+        }
+        
+        // Get player reputation from the reputation manager
+        var reputationManager = plugin.getReputationManager();
+        if (reputationManager == null) {
+            return null;
+        }
+        
+        var reputation = reputationManager.getPlayerReputationSync(player);
+        if (reputation == null) {
+            // Create a default reputation item if not found
+            return createDefaultReputationItem();
+        }
+        
+        ItemStack item = new ItemStack(org.bukkit.Material.DIAMOND);
+        ItemMeta meta = item.getItemMeta();
+        
+        if (meta != null) {
+            meta.displayName(Component.text("Reputation", net.kyori.adventure.text.format.NamedTextColor.GOLD)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            
+            java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+            lore.add(Component.text("Current Reputation: " + reputation.getReputationColor() + reputation.getReputation(), 
+                net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("Status: " + reputation.getReputationColor() + reputation.getReputationStatus(), 
+                net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("Range: -15 to +15", 
+                net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("", net.kyori.adventure.text.format.NamedTextColor.WHITE));
+            lore.add(Component.text("• Lose reputation for killing", 
+                net.kyori.adventure.text.format.NamedTextColor.RED)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("  normal players outside PVP zones", 
+                net.kyori.adventure.text.format.NamedTextColor.RED)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("• Gain reputation over time", 
+                net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("  (1 rep per hour of playtime)", 
+                net.kyori.adventure.text.format.NamedTextColor.GREEN)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        
+        return item;
+    }
+    
+    /**
+     * Creates a default reputation item when reputation data is not available
+     * @return The default reputation item stack
+     */
+    private ItemStack createDefaultReputationItem() {
+        ItemStack item = new ItemStack(org.bukkit.Material.DIAMOND);
+        ItemMeta meta = item.getItemMeta();
+        
+        if (meta != null) {
+            meta.displayName(Component.text("Reputation", net.kyori.adventure.text.format.NamedTextColor.GOLD)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            
+            java.util.List<net.kyori.adventure.text.Component> lore = new java.util.ArrayList<>();
+            lore.add(Component.text("Current Reputation: §e0", 
+                net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("Status: §eNeutral", 
+                net.kyori.adventure.text.format.NamedTextColor.WHITE)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            lore.add(Component.text("Range: -15 to +15", 
+                net.kyori.adventure.text.format.NamedTextColor.GRAY)
+                .decoration(net.kyori.adventure.text.format.TextDecoration.ITALIC, false));
+            
+            meta.lore(lore);
+            item.setItemMeta(meta);
+        }
+        
+        return item;
+    }
+    
+    /**
+     * Handles reputation item clicks
+     * @param player The player who clicked
+     * @return true if handled
+     */
+    private boolean handleReputationClick(Player player) {
+        if (player == null || !playerModeManager.isNormalPlayer(player)) {
+            return false;
+        }
+        
+        // For now, just show a message with current reputation
+        var reputationManager = plugin.getReputationManager();
+        if (reputationManager != null) {
+            var reputation = reputationManager.getPlayerReputationSync(player);
+            if (reputation != null) {
+                player.sendMessage(Component.text("Your current reputation: " + reputation.getReputationColor() + 
+                    reputation.getReputation() + " (" + reputation.getReputationStatus() + ")", 
+                    net.kyori.adventure.text.format.NamedTextColor.WHITE));
+            } else {
+                player.sendMessage(Component.text("Your current reputation: §e0 (Neutral)", 
+                    net.kyori.adventure.text.format.NamedTextColor.WHITE));
+            }
+        }
+        
+        return true;
     }
     
 }

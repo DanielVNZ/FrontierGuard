@@ -44,6 +44,11 @@ public class BlockProtectionListener implements Listener {
      */
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = false)
     public void onPlayerInteract(PlayerInteractEvent event) {
+        // Only handle right-click interactions for doors and containers
+        if (event.getAction() != org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK) {
+            return;
+        }
+        
         // Always run protection logic, even if another plugin cancelled
         // Handle container access protection
         protectionManager.handleContainerAccess(event);

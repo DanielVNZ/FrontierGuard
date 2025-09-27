@@ -6,7 +6,7 @@
 
   <groupId>com.danielvnz</groupId>
   <artifactId>FrontierGuard</artifactId>
-    <version>1.0.2</version>
+    <version>1.0.8</version>
   <packaging>jar</packaging>
 
   <name>FrontierGuard</name>
@@ -27,6 +27,14 @@
     <repository>
       <id>jitpack.io</id>
       <url>https://jitpack.io</url>
+    </repository>
+    <repository>
+      <id>enginehub-maven</id>
+      <url>https://maven.enginehub.org/repo/</url>
+    </repository>
+    <repository>
+      <id>placeholderapi</id>
+      <url>https://repo.extendedclip.com/content/repositories/placeholderapi/</url>
     </repository>
   </repositories>
 
@@ -53,6 +61,15 @@
       <version>1.7</version>
       <scope>provided</scope>
     </dependency>
+    
+    <!-- PlaceholderAPI -->
+    <dependency>
+      <groupId>me.clip</groupId>
+      <artifactId>placeholderapi</artifactId>
+      <version>2.11.6</version>
+      <scope>provided</scope>
+    </dependency>
+    
     
     <!-- Test Dependencies -->
     <dependency>
@@ -83,6 +100,23 @@
       <version>2.2.224</version>
       <scope>test</scope>
     </dependency>
+
+        <!-- WorldGuard API -->
+    <dependency>
+      <groupId>com.sk89q.worldguard</groupId>
+      <artifactId>worldguard-bukkit</artifactId>
+      <version>7.0.9</version> <!-- Match the version running on your server -->
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- WorldEdit API (required by WorldGuard) -->
+    <dependency>
+      <groupId>com.sk89q.worldedit</groupId>
+      <artifactId>worldedit-bukkit</artifactId>
+      <version>7.2.18</version> <!-- Match the version running on your server -->
+      <scope>provided</scope>
+    </dependency>
+
     
 
   </dependencies>
