@@ -83,16 +83,26 @@ public class UpdateChecker {
      * Checks for updates asynchronously
      */
     public void checkForUpdates() {
+        checkForUpdates(false);
+    }
+    
+    /**
+     * Checks for updates asynchronously
+     * @param forceCheck If true, bypasses the time interval check
+     */
+    public void checkForUpdates(boolean forceCheck) {
         if (!configManager.isUpdateCheckEnabled()) {
             return;
         }
         
-        // Check if enough time has passed since last check
-        long currentTime = System.currentTimeMillis();
-        long checkInterval = configManager.getUpdateCheckIntervalHours() * 60 * 60 * 1000L;
-        
-        if (currentTime - lastCheckTime < checkInterval) {
-            return;
+        // Check if enough time has passed since last check (unless forced)
+        if (!forceCheck) {
+            long currentTime = System.currentTimeMillis();
+            long checkInterval = configManager.getUpdateCheckIntervalHours() * 60 * 60 * 1000L;
+            
+            if (currentTime - lastCheckTime < checkInterval) {
+                return;
+            }
         }
         
         plugin.getLogger().info("Checking for updates...");
@@ -151,6 +161,9 @@ public class UpdateChecker {
         if (isNewerVersion(latestVersion, currentVersion)) {
             this.updateAvailable = true;
             plugin.getLogger().info("Update available! Current: " + currentVersion + ", Latest: " + latestVersion);
+            
+            // Clear notified players list so everyone gets notified about the new update
+            notifiedPlayers.clear();
             
             // Notify online admins immediately
             notifyAdmins();
@@ -234,7 +247,10 @@ public class UpdateChecker {
             .append(Component.text("\nLatest Version: ", NamedTextColor.GRAY))
             .append(Component.text("v" + latestVersion, NamedTextColor.GREEN))
             .append(Component.text("\nDownload: ", NamedTextColor.GRAY))
-            .append(Component.text(configManager.getUpdateDownloadUrl(), NamedTextColor.AQUA, TextDecoration.UNDERLINED));
+            .append(Component.text("Click here to download", NamedTextColor.AQUA, TextDecoration.UNDERLINED)
+                .clickEvent(net.kyori.adventure.text.event.ClickEvent.openUrl(configManager.getUpdateDownloadUrl())))
+            .append(Component.text("\nOr use: ", NamedTextColor.GRAY))
+            .append(Component.text("/fg update", NamedTextColor.YELLOW, TextDecoration.ITALIC));
         
         player.sendMessage(message);
         
@@ -284,6 +300,24 @@ public class UpdateChecker {
         }
         
         return "Update available! Current: " + currentVersion + ", Latest: " + latestVersion;
+    }
+    
+    /**
+     * Gets detailed update information for display
+     */
+    public String getDetailedUpdateInfo() {
+        if (latestVersion == null) {
+            return "Unable to check for updates. Current version: " + currentVersion;
+        }
+        
+        if (!updateAvailable) {
+            return "Plugin is up to date! Current version: " + currentVersion + " (Latest: " + latestVersion + ")";
+        }
+        
+        return "Update available!\n" +
+               "Current version: " + currentVersion + "\n" +
+               "Latest version: " + latestVersion + "\n" +
+               "Download: " + configManager.getUpdateDownloadUrl();
     }
     
     /**

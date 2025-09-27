@@ -9,6 +9,7 @@ import com.danielvnz.landclaimer.model.PlayerMode;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
+import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
@@ -55,7 +56,8 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
         plugin.getLogger().info("Command received: label=" + label + ", args=" + Arrays.toString(args) + " from player=" + player.getName());
         
         if (args.length == 0) {
-            sendHelpMessage(player);
+            // Open GUI when no arguments provided
+            plugin.getGuiManager().openMainGui(player);
             return true;
         }
         
@@ -114,6 +116,17 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
                 return handleInvitationsCommand(player, args);
             case "cooldown":
                 return handleCooldownCommand(player, args);
+            case "setrep":
+                return handleSetReputationCommand(player, args);
+            case "addrep":
+                return handleAddReputationCommand(player, args);
+            case "rep":
+                return handleReputationCommand(player, args);
+            case "noob":
+                return handleNoobCommand(player, args);
+            case "testwg":
+            case "testworldguard":
+                return handleTestWorldGuardCommand(player, args);
             case "help":
                 sendHelpMessage(player);
                 return true;
@@ -238,12 +251,16 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
         
         // Send each claim
         for (ClaimData claim : claims) {
+            // Calculate world coordinates of chunk center
+            int worldX = claim.getChunkX() * 16 + 8; // Chunk center X
+            int worldZ = claim.getChunkZ() * 16 + 8; // Chunk center Z
+            
             Component claimInfo = Component.text("• ", NamedTextColor.GRAY)
                 .append(Component.text(claim.getWorldName(), NamedTextColor.WHITE))
                 .append(Component.text(" (", NamedTextColor.GRAY))
-                .append(Component.text(claim.getChunkX(), NamedTextColor.YELLOW))
+                .append(Component.text(worldX, NamedTextColor.YELLOW))
                 .append(Component.text(", ", NamedTextColor.GRAY))
-                .append(Component.text(claim.getChunkZ(), NamedTextColor.YELLOW))
+                .append(Component.text(worldZ, NamedTextColor.YELLOW))
                 .append(Component.text(")", NamedTextColor.GRAY));
             
             player.sendMessage(claimInfo);
@@ -657,10 +674,14 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             .append(Component.text("'s Claims ===", NamedTextColor.GOLD, TextDecoration.BOLD)));
         
         for (var claim : claims) {
+            // Calculate world coordinates of chunk center
+            int worldX = claim.getChunkX() * 16 + 8; // Chunk center X
+            int worldZ = claim.getChunkZ() * 16 + 8; // Chunk center Z
+            
             Component claimInfo = Component.text("• ", NamedTextColor.GRAY)
                 .append(Component.text(claim.getWorldName(), NamedTextColor.YELLOW))
                 .append(Component.text(" (", NamedTextColor.GRAY))
-                .append(Component.text(claim.getChunkX() + ", " + claim.getChunkZ(), NamedTextColor.WHITE))
+                .append(Component.text(worldX + ", " + worldZ, NamedTextColor.WHITE))
                 .append(Component.text(")", NamedTextColor.GRAY));
             
             player.sendMessage(claimInfo);
@@ -743,8 +764,6 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             .append(Component.text(" - Show information about the current chunk (works for any claim)", NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/frontierguard show", NamedTextColor.YELLOW)
             .append(Component.text(" - Show claim boundaries near you for 5 seconds", NamedTextColor.WHITE)));
-        player.sendMessage(Component.text("/frontierguard gui", NamedTextColor.YELLOW)
-            .append(Component.text(" - Open the GUI menu", NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/frontierguard invite <player>", NamedTextColor.YELLOW)
             .append(Component.text(" - Invite a player to your claim", NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/frontierguard invite <landowner> <player>", NamedTextColor.YELLOW)
@@ -755,6 +774,8 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             .append(Component.text(" - View invited players for your claim", NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/frontierguard cooldown", NamedTextColor.YELLOW)
             .append(Component.text(" - Check your mode change cooldown status", NamedTextColor.WHITE)));
+        player.sendMessage(Component.text("/frontierguard rep [player]", NamedTextColor.YELLOW)
+            .append(Component.text(" - View reputation (yours or another player's)", NamedTextColor.WHITE)));
         player.sendMessage(Component.text("/frontierguard help", NamedTextColor.YELLOW)
             .append(Component.text(" - Show this help message", NamedTextColor.WHITE)));
         
@@ -764,7 +785,8 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
                                    player.hasPermission("frontierguard.admin.setmode") ||
                                    player.hasPermission("frontierguard.admin.forcemode") ||
                                    player.hasPermission("frontierguard.admin.claims") ||
-                                   player.hasPermission("frontierguard.admin.setclaimlimit");
+                                   player.hasPermission("frontierguard.admin.setclaimlimit") ||
+                                   player.hasPermission("frontierguard.rep.admin");
         
         if (hasAdminPermission) {
             player.sendMessage(Component.text("", NamedTextColor.GRAY));
@@ -810,6 +832,15 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
                 player.sendMessage(Component.text("/frontierguard update", NamedTextColor.YELLOW)
                     .append(Component.text(" - Check for plugin updates", NamedTextColor.WHITE)));
             }
+            
+            if (player.hasPermission("frontierguard.rep.admin")) {
+                player.sendMessage(Component.text("/frontierguard setrep <player> <reputation>", NamedTextColor.YELLOW)
+                    .append(Component.text(" - Set a player's reputation (-15 to 15)", NamedTextColor.WHITE)));
+                player.sendMessage(Component.text("/frontierguard addrep <player> <amount>", NamedTextColor.YELLOW)
+                    .append(Component.text(" - Add/subtract reputation from a player", NamedTextColor.WHITE)));
+                player.sendMessage(Component.text("/frontierguard noob <player>", NamedTextColor.YELLOW)
+                    .append(Component.text(" - Mark a player as noob for 30 minutes", NamedTextColor.WHITE)));
+            }
         }
         
         // Show mode information
@@ -828,7 +859,7 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            List<String> subCommands = new ArrayList<>(Arrays.asList("claim", "unclaim", "claims", "claiminfo", "info", "gui", "invite", "uninvite", "invitations", "cooldown", "help"));
+            List<String> subCommands = new ArrayList<>(Arrays.asList("claim", "unclaim", "claims", "claiminfo", "info", "gui", "invite", "uninvite", "invitations", "cooldown", "rep", "help"));
             
             // Add admin commands if player has permission
             if (sender.hasPermission("frontierguard.admin.pvparea")) {
@@ -848,6 +879,9 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             }
             if (sender.hasPermission("frontierguard.admin.setclaimlimit")) {
                 subCommands.add("setclaimlimit");
+            }
+            if (sender.hasPermission("frontierguard.rep.admin")) {
+                subCommands.addAll(Arrays.asList("setrep", "addrep", "noob"));
             }
             
             List<String> completions = new ArrayList<>();
@@ -1024,23 +1058,15 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
             return true;
         }
         
-        // Check if player is in a claim
-        Chunk chunk = player.getLocation().getChunk();
-        ClaimData claim = claimManager.getClaimInfo(chunk);
-        
-        if (claim == null) {
-            player.sendMessage(Component.text("You must be standing in a claim to uninvite someone!", NamedTextColor.RED));
+        // Check if player has any claims (uninvite works across all claims)
+        List<ClaimData> playerClaims = claimManager.getPlayerClaims(player);
+        if (playerClaims.isEmpty()) {
+            player.sendMessage(Component.text("You don't have any claims to uninvite players from!", NamedTextColor.RED));
             return true;
         }
         
-        // Check if player owns the claim
-        if (!claim.getOwnerUuid().equals(player.getUniqueId())) {
-            player.sendMessage(Component.text("You can only uninvite players from your own claims!", NamedTextColor.RED));
-            return true;
-        }
-        
-        // Uninvite the player
-        invitationManager.uninvitePlayer(player, targetPlayer, claim);
+        // Uninvite the player from all claims (pass null as claim since it's not needed)
+        invitationManager.uninvitePlayer(player, targetPlayer, null);
         return true;
     }
     
@@ -1090,18 +1116,32 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
         
         // Check for updates
         player.sendMessage(Component.text("Checking for updates...", NamedTextColor.YELLOW));
-        plugin.getUpdateChecker().checkForUpdates();
         
-        // Show current update status
-        String updateInfo = plugin.getUpdateChecker().getUpdateInfo();
-        player.sendMessage(Component.text(updateInfo, NamedTextColor.WHITE));
+        // Perform the update check asynchronously and provide feedback
+        plugin.getUpdateChecker().checkForUpdates(true); // Force check for manual command
         
-        // If update is available, show download link
-        if (plugin.getUpdateChecker().isUpdateAvailable()) {
-            String downloadUrl = plugin.getConfigurationManager().getUpdateDownloadUrl();
-            player.sendMessage(Component.text("Download: ", NamedTextColor.GRAY)
-                .append(Component.text(downloadUrl, NamedTextColor.AQUA, TextDecoration.UNDERLINED)));
-        }
+        // Wait a moment for the async check to complete, then show results
+        new org.bukkit.scheduler.BukkitRunnable() {
+            @Override
+            public void run() {
+                String updateInfo = plugin.getUpdateChecker().getDetailedUpdateInfo();
+                
+                // Split the message into lines and send each one
+                String[] lines = updateInfo.split("\n");
+                for (String line : lines) {
+                    NamedTextColor color = line.contains("Update available") ? NamedTextColor.GREEN : 
+                                         line.contains("up to date") ? NamedTextColor.GREEN :
+                                         line.contains("Unable to check") ? NamedTextColor.RED : NamedTextColor.WHITE;
+                    player.sendMessage(Component.text(line, color));
+                }
+                
+                // If update is available, show additional info
+                if (plugin.getUpdateChecker().isUpdateAvailable()) {
+                    player.sendMessage(Component.text(""));
+                    player.sendMessage(Component.text("Click the link above to download the latest version!", NamedTextColor.GOLD, TextDecoration.BOLD));
+                }
+            }
+        }.runTaskLater(plugin, 20L); // Wait 1 second for the async check to complete
         
         return true;
     }
@@ -1145,6 +1185,300 @@ public class LandClaimerCommandExecutor implements CommandExecutor, TabCompleter
         // Test claim limits
         int maxClaims = plugin.getConfigurationManager().getClaimLimit("default");
         player.sendMessage(Component.text("Default claim limit: " + maxClaims, NamedTextColor.YELLOW));
+        
+        return true;
+    }
+    
+    /**
+     * Handles the test WorldGuard command (debug)
+     */
+    private boolean handleTestWorldGuardCommand(Player player, String[] args) {
+        // Check if player has admin permission
+        if (!player.hasPermission("frontierguard.admin")) {
+            player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+            return true;
+        }
+        
+        player.sendMessage(Component.text("=== WorldGuard Debug Info ===", NamedTextColor.GOLD, TextDecoration.BOLD));
+        
+        Location location = player.getLocation();
+        Chunk chunk = location.getChunk();
+        
+        // Test WorldGuard integration
+        if (!claimManager.getWorldGuardIntegration().isWorldGuardAvailable()) {
+            player.sendMessage(Component.text("❌ WorldGuard: NOT AVAILABLE", NamedTextColor.RED));
+            player.sendMessage(Component.text("WorldGuard plugin not found or integration failed", NamedTextColor.GRAY));
+            return true;
+        }
+        
+        player.sendMessage(Component.text("✅ WorldGuard: AVAILABLE", NamedTextColor.GREEN));
+        
+        // Test location info
+        player.sendMessage(Component.text("Location: " + location.toString(), NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("Chunk: (" + chunk.getX() + ", " + chunk.getZ() + ")", NamedTextColor.YELLOW));
+        player.sendMessage(Component.text("World: " + location.getWorld().getName(), NamedTextColor.YELLOW));
+        
+        // Test region detection
+        try {
+            boolean isProtected = claimManager.getWorldGuardIntegration().isChunkProtected(chunk);
+            if (isProtected) {
+                player.sendMessage(Component.text("✅ Location is PROTECTED by WorldGuard", NamedTextColor.RED));
+                
+                String regionName = claimManager.getWorldGuardIntegration().getProtectedRegionName(chunk);
+                if (regionName != null) {
+                    player.sendMessage(Component.text("Region name: " + regionName, NamedTextColor.YELLOW));
+                } else {
+                    player.sendMessage(Component.text("Region name: Unknown", NamedTextColor.GRAY));
+                }
+            } else {
+                player.sendMessage(Component.text("❌ Location is NOT PROTECTED by WorldGuard", NamedTextColor.GREEN));
+            }
+        } catch (Exception e) {
+            player.sendMessage(Component.text("❌ Error checking location protection: " + e.getMessage(), NamedTextColor.RED));
+        }
+        
+        // Test chunk protection
+        try {
+            boolean chunkProtected = claimManager.getWorldGuardIntegration().isChunkProtected(chunk);
+            if (chunkProtected) {
+                player.sendMessage(Component.text("✅ Chunk is PROTECTED by WorldGuard", NamedTextColor.RED));
+                
+                String regionName = claimManager.getWorldGuardIntegration().getProtectedRegionName(chunk);
+                if (regionName != null) {
+                    player.sendMessage(Component.text("Chunk region name: " + regionName, NamedTextColor.YELLOW));
+                } else {
+                    player.sendMessage(Component.text("Chunk region name: Unknown", NamedTextColor.GRAY));
+                }
+            } else {
+                player.sendMessage(Component.text("❌ Chunk is NOT PROTECTED by WorldGuard", NamedTextColor.GREEN));
+            }
+        } catch (Exception e) {
+            player.sendMessage(Component.text("❌ Error checking chunk protection: " + e.getMessage(), NamedTextColor.RED));
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handles the setrep command for setting a player's reputation
+     * @param player The player executing the command
+     * @param args The command arguments
+     * @return true if handled
+     */
+    private boolean handleSetReputationCommand(Player player, String[] args) {
+        if (!player.hasPermission("frontierguard.rep.admin")) {
+            player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+            return true;
+        }
+        
+        if (args.length < 3) {
+            player.sendMessage(Component.text("Usage: /fg setrep <player> <reputation>", NamedTextColor.RED));
+            return true;
+        }
+        
+        String targetName = args[1];
+        Player target = Bukkit.getPlayer(targetName);
+        
+        if (target == null) {
+            player.sendMessage(Component.text("Player '" + targetName + "' not found!", NamedTextColor.RED));
+            return true;
+        }
+        
+        try {
+            int reputation = Integer.parseInt(args[2]);
+            
+            if (reputation < -15 || reputation > 15) {
+                player.sendMessage(Component.text("Reputation must be between -15 and 15!", NamedTextColor.RED));
+                return true;
+            }
+            
+            var reputationManager = plugin.getReputationManager();
+            if (reputationManager != null) {
+                reputationManager.setPlayerReputation(target, reputation).thenAccept(actualReputation -> {
+                    player.sendMessage(Component.text(
+                        String.format("Set %s's reputation to %d", target.getName(), actualReputation),
+                        NamedTextColor.GREEN));
+                    
+                    target.sendMessage(Component.text(
+                        String.format("Your reputation has been set to %d by an admin", actualReputation),
+                        NamedTextColor.YELLOW));
+                });
+            } else {
+                player.sendMessage(Component.text("Reputation system is not available!", NamedTextColor.RED));
+            }
+            
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Invalid reputation value! Must be a number.", NamedTextColor.RED));
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handles the addrep command for adding to a player's reputation
+     * @param player The player executing the command
+     * @param args The command arguments
+     * @return true if handled
+     */
+    private boolean handleAddReputationCommand(Player player, String[] args) {
+        if (!player.hasPermission("frontierguard.rep.admin")) {
+            player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+            return true;
+        }
+        
+        if (args.length < 3) {
+            player.sendMessage(Component.text("Usage: /fg addrep <player> <amount>", NamedTextColor.RED));
+            return true;
+        }
+        
+        String targetName = args[1];
+        Player target = Bukkit.getPlayer(targetName);
+        
+        if (target == null) {
+            player.sendMessage(Component.text("Player '" + targetName + "' not found!", NamedTextColor.RED));
+            return true;
+        }
+        
+        try {
+            int amount = Integer.parseInt(args[2]);
+            
+            var reputationManager = plugin.getReputationManager();
+            if (reputationManager != null) {
+                reputationManager.addPlayerReputation(target, amount).thenAccept(actualChange -> {
+                    if (actualChange != 0) {
+                        player.sendMessage(Component.text(
+                            String.format("%s %d reputation to %s", 
+                                        amount >= 0 ? "Added" : "Removed", Math.abs(actualChange), target.getName()),
+                            NamedTextColor.GREEN));
+                        
+                        target.sendMessage(Component.text(
+                            String.format("Your reputation has been %s by %d by an admin", 
+                                        amount >= 0 ? "increased" : "decreased", Math.abs(actualChange)),
+                            NamedTextColor.YELLOW));
+                    } else {
+                        player.sendMessage(Component.text(
+                            String.format("Could not change %s's reputation (may be at limit)", target.getName()),
+                            NamedTextColor.YELLOW));
+                    }
+                });
+            } else {
+                player.sendMessage(Component.text("Reputation system is not available!", NamedTextColor.RED));
+            }
+            
+        } catch (NumberFormatException e) {
+            player.sendMessage(Component.text("Invalid amount value! Must be a number.", NamedTextColor.RED));
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handles the rep command for viewing reputation
+     * @param player The player executing the command
+     * @param args The command arguments
+     * @return true if handled
+     */
+    private boolean handleReputationCommand(Player player, String[] args) {
+        final Player target;
+        
+        // Check if player is asking for another player's reputation
+        if (args.length >= 2) {
+            if (!player.hasPermission("frontierguard.rep.view.others")) {
+                player.sendMessage(Component.text("You don't have permission to view other players' reputation!", NamedTextColor.RED));
+                return true;
+            }
+            
+            String targetName = args[1];
+            Player foundPlayer = Bukkit.getPlayer(targetName);
+            
+            if (foundPlayer == null) {
+                player.sendMessage(Component.text("Player '" + targetName + "' not found!", NamedTextColor.RED));
+                return true;
+            }
+            
+            target = foundPlayer;
+        } else {
+            target = player;
+        }
+        
+        var reputationManager = plugin.getReputationManager();
+        if (reputationManager != null) {
+            reputationManager.getPlayerReputation(target).thenAccept(reputation -> {
+                if (reputation != null) {
+                    String message = String.format("%s's reputation: %s%d (%s)", 
+                                                 target.getName(), 
+                                                 reputation.getReputationColor(), 
+                                                 reputation.getReputation(),
+                                                 reputation.getReputationStatus());
+                    
+                    player.sendMessage(Component.text(message, NamedTextColor.WHITE));
+                } else {
+                    player.sendMessage(Component.text(
+                        String.format("%s's reputation: §e0 (Neutral)", target.getName()),
+                        NamedTextColor.WHITE));
+                }
+            });
+        } else {
+            player.sendMessage(Component.text("Reputation system is not available!", NamedTextColor.RED));
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Handles the noob command for marking players as noob
+     * @param player The player executing the command
+     * @param args The command arguments
+     * @return true if handled
+     */
+    private boolean handleNoobCommand(Player player, String[] args) {
+        if (!player.hasPermission("frontierguard.rep.admin")) {
+            player.sendMessage(Component.text("You don't have permission to use this command!", NamedTextColor.RED));
+            return true;
+        }
+        
+        if (args.length < 2) {
+            player.sendMessage(Component.text("Usage: /fg noob <player>", NamedTextColor.RED));
+            return true;
+        }
+        
+        String targetName = args[1];
+        Player target = Bukkit.getPlayer(targetName);
+        
+        if (target == null) {
+            player.sendMessage(Component.text("Player '" + targetName + "' not found!", NamedTextColor.RED));
+            return true;
+        }
+        
+        var noobManager = plugin.getNoobManager();
+        if (noobManager == null) {
+            player.sendMessage(Component.text("Noob system is not available!", NamedTextColor.RED));
+            return true;
+        }
+        
+        // Check if player is already marked as noob
+        if (noobManager.isPlayerNoob(target)) {
+            long remainingTime = noobManager.getRemainingNoobTime(target);
+            player.sendMessage(Component.text(
+                String.format("%s is already marked as noob for %d more minutes", target.getName(), remainingTime),
+                NamedTextColor.YELLOW));
+            return true;
+        }
+        
+        // Mark player as noob
+        if (noobManager.markPlayerAsNoob(target)) {
+            player.sendMessage(Component.text(
+                String.format("Marked %s as noob for 30 minutes", target.getName()),
+                NamedTextColor.GREEN));
+            
+            target.sendMessage(Component.text(
+                "You have been marked as a noob for 30 minutes by an admin",
+                NamedTextColor.YELLOW));
+        } else {
+            player.sendMessage(Component.text(
+                "Failed to mark player as noob",
+                NamedTextColor.RED));
+        }
         
         return true;
     }
