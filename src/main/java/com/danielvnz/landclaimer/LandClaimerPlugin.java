@@ -28,6 +28,7 @@ import com.danielvnz.landclaimer.manager.UpdateChecker;
 import com.danielvnz.landclaimer.placeholder.FrontierGuardPlaceholders;
 import com.danielvnz.landclaimer.manager.VisualFeedbackManager;
 import net.milkbowl.vault.economy.Economy;
+import org.bstats.bukkit.Metrics;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -54,6 +55,7 @@ public class LandClaimerPlugin extends JavaPlugin {
     private GuiManager guiManager;
     private UpdateChecker updateChecker;
     private Economy economy;
+    private Metrics metrics;
     private boolean initialized = false;
     
     @Override
@@ -76,6 +78,9 @@ public class LandClaimerPlugin extends JavaPlugin {
             
             // Initialize managers
             initializeManagers();
+            
+            // Initialize bStats metrics
+            initializeMetrics();
             
             // Start update checker
             updateChecker.start();
@@ -225,6 +230,19 @@ public class LandClaimerPlugin extends JavaPlugin {
         
         guiManager = new GuiManager(this, playerModeManager, claimManager, economy);
         getLogger().info("Managers initialized successfully");
+    }
+    
+    /**
+     * Initializes bStats metrics
+     */
+    private void initializeMetrics() {
+        try {
+            // Initialize bStats with plugin ID 27403
+            metrics = new Metrics(this, 27403);
+            getLogger().info("bStats metrics initialized successfully");
+        } catch (Exception e) {
+            getLogger().warning("Failed to initialize bStats metrics: " + e.getMessage());
+        }
     }
     
     /**

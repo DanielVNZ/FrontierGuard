@@ -116,8 +116,14 @@
       <version>7.2.18</version> <!-- Match the version running on your server -->
       <scope>provided</scope>
     </dependency>
-
     
+    <!-- bStats for analytics -->
+    <dependency>
+      <groupId>org.bstats</groupId>
+      <artifactId>bstats-bukkit</artifactId>
+      <version>3.0.2</version>
+      <scope>compile</scope>
+    </dependency>
 
   </dependencies>
 
@@ -152,6 +158,10 @@
                 <relocation>
                   <pattern>org.sqlite</pattern>
                   <shadedPattern>com.danielvnz.landclaimer.libs.sqlite</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.bstats</pattern>
+                  <shadedPattern>com.danielvnz.landclaimer.libs.bstats</shadedPattern>
                 </relocation>
               </relocations>
               <filters>
